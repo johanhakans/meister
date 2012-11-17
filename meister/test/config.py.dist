@@ -1,0 +1,7 @@
+# Add secret keys here.
+
+EC2_ACCESS_ID = 'YOUR-ID'
+EC2_SECRET_KEY = 'YOUR-KEY'
+
+
+
