@@ -16,9 +16,12 @@ class AWSConnectionTest(unittest.TestCase):
         """
         image_id = 'ami-c1aaabb5'
         node = self.aws.createNode(image_id, 't1.micro', 'testnode', '10')
+        # We should have a pending state.
+        self.assertEqual(node.state, 3)
         node.destroy()
-        print node
-        self.assertEqual(node.image, image_id)
+    
+    def testCreateSecurityGroup(self):
+        self.aws.createSecurityGroup("mygroup", "mydescription")
         
     def tearDown(self):
         for node in self.nodes:
