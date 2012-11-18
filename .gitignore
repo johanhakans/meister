@@ -1,2 +1,2 @@
 *.pyc
-meister/test/config.py
+meister/test/secrets.py
