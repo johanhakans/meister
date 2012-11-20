@@ -4,10 +4,11 @@ from pprint import pprint as pp
 from meister import aws
 from libcloud.compute.types import Provider
 
+
 class AWSConnectionTest(unittest.TestCase):
     
     def setUp(self):
-        self.aws = aws.AWSConnection(Provider.EC2_EU_WEST, config.EC2_ACCESS_ID, config.EC2_SECRET_KEY)
+        self.aws = aws.AWSConnection(Provider.EC2_EU_WEST, secrets.EC2_ACCESS_ID, secrets.EC2_SECRET_KEY)
 
     def testCreateNode(self):
         """
