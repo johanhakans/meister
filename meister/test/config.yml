@@ -1,0 +1,60 @@
+---
+# The management server is the main
+# server which runs the puppet master.
+managementServer: mgmt
+
+# The repo of the puppet master.
+puppetRepo:
+    url: "git@github.com:WKLive/example-puppet-master"
+    branch: master
+# The driver to use.
+driver:
+    name: AWSDriver
+    id: your-id
+    key: your-key
+    region: your-region
+    defaultSecurityGroup: group
+# DNS Provider.
+dns:
+    name: Provider
+
+# Security groups with firewall rules.
+securityGroups:
+    group:
+        rules:
+            - ip: 10.10.1.1/32
+              fromPort: 8081
+              toPort: 8082
+              ip: 192.168.1.0/32
+              fromPort: 8081
+              toPort: 8082
+
+        group2:
+            rules:
+                - ip: 10.10.1.1/32
+                  fromPort: 8081
+                  toPort: 8082
+
+# The nodes to create.
+nodes:
+    mgmt:
+        hostname: mgmt
+        size: t1.micro
+        externalDNS: mgmt.dns
+        internalDNS: mgmt.internal.dns
+        image: ami-c1aaabb5
+    application1:
+        hostname: application1
+        size: t1.micro
+        image: ami-c1aaabb5
+        externalDNS: application1.dns
+        internalDNS: application1.internal.dns
+        securitygroup: group
+    application2:
+        hostname: application2
+        size: t1.micro
+        externalDNS: application2.dns
+        internalDNS: application2.internal.dns
+        image: ami-c1aaabb5
+        securitygroup: group2
+
