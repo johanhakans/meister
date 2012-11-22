@@ -24,3 +24,19 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(mgmt.image, 'ami-c1aaabb5')
         self.assertEqual(mgmt.size, 't1.micro')
         self.assertEqual(mgmt.hostname, 'mgmt')
+        self.assertEqual(mgmt.securityGroup, 'group')
+        
+        # Application 2 should have it's own group
+        application2 = nodes["application2"]
+        self.assertEqual(application2.securityGroup, 'group2')
+        
+        # Browse security groups.
+        groups = config.getSecurityGroups()
+        self.assertTrue("group" in groups)
+        self.assertTrue("group2" in groups)
+        
+        group1 = groups["group"]
+        self.assertEqual(group1['description'], "Group1 description")
+        self.assertEqual(group1['rules'][0]["ip"], "10.10.1.1/32")
+        self.assertEqual(group1['rules'][1]["ip"], "192.168.1.0/32")
+        
