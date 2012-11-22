@@ -26,18 +26,25 @@ class YamlConfig(Config):
     
     def parse(self):
         data = yaml.load(open(self.configFile).read())
-        self.driver = globals()[data['driver']['name']](data['driver'])
+        self.driver = globals()[data['driver']['name']](self, data)
         self.nodes = {}
         for name, node in data["nodes"].items():
             self.nodes[name] = self.driver.getNode(name, node)
 
 class AWSDriver:
-    def __init__(self, settings):
-        self.aws_id = settings['id']
-        self.aws_key = settings['key']
-        self.aws_region = settings['region']
-        self.defaultSecurityGroup = settings['defaultSecurityGroup']
-
+    def __init__(self, config, settings):
+        self.aws_id = settings['driver']['id']
+        self.aws_key = settings['driver']['key']
+        self.aws_region = settings['driver']['region']
+        self.defaultSecurityGroup = settings['driver']['defaultSecurityGroup']
+        config.getSecurityGroups = self.getSecurityGroups
+        if 'securityGroups' in settings.keys():
+            self.securityGroups = settings['securityGroups']
+        
+         
+    def getSecurityGroups(self):
+        return self.securityGroups
+        
     def getConnection(self):
         aws.AWSConnection(self.aws_region, self.aws_id, self.aws_key) 
 

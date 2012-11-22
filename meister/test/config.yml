@@ -21,19 +21,21 @@ dns:
 # Security groups with firewall rules.
 securityGroups:
     group:
+        description: Group1 description
         rules:
             - ip: 10.10.1.1/32
               fromPort: 8081
               toPort: 8082
-              ip: 192.168.1.0/32
+            - ip: 192.168.1.0/32
               fromPort: 8081
               toPort: 8082
 
-        group2:
-            rules:
-                - ip: 10.10.1.1/32
-                  fromPort: 8081
-                  toPort: 8082
+    group2:
+        description: Group2 description
+        rules:
+            - ip: 10.10.1.1/32
+              fromPort: 8081
+              toPort: 8082
 
 # The nodes to create.
 nodes:
@@ -49,12 +51,11 @@ nodes:
         image: ami-c1aaabb5
         externalDNS: application1.dns
         internalDNS: application1.internal.dns
-        securitygroup: group
     application2:
         hostname: application2
         size: t1.micro
         externalDNS: application2.dns
         internalDNS: application2.internal.dns
         image: ami-c1aaabb5
-        securitygroup: group2
+        securityGroup: group2
 
