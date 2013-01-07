@@ -1,11 +1,16 @@
+'''
+Created on Nov 22, 2012
+
+@author: fabsor
+'''
 from libcloud.compute.types import Provider
 from libcloud.compute.providers import get_driver
 from libcloud.utils.xml import fixxpath, findtext, findattr, findall
 from libcloud.compute.drivers.ec2 import NAMESPACE 
 
-class AWSConnection:
+class EC2Connection:
     """
-    The AWSConnection class is a tiny wrapper around libcloud
+    The EC2Connection class is a tiny wrapper around libcloud
     which only exposes the parts of the API that we are interested in.
     """
    
@@ -28,7 +33,7 @@ class AWSConnection:
         Create a security groups
         """
         self.conn.ex_create_security_group(name, description)
-        group = AWSSecurityGroup(self.conn, name, description)
+        group = EC2SecurityGroup(self.conn, name, description)
         return group
     
     def getSecurityGroups(self):
@@ -47,7 +52,7 @@ class AWSConnection:
         Delete a security group.
         @param name The name of the parameter.
         """
-        if isinstance(name, AWSSecurityGroup):
+        if isinstance(name, EC2SecurityGroup):
             name = name.name
 
         params = {
@@ -72,7 +77,7 @@ class AWSConnection:
         """
         Convert a SecurityGroupInfo aws object to a python object.
         """
-        group = AWSSecurityGroup(
+        group = EC2SecurityGroup(
             self.conn,    
             findtext(element=element, xpath='groupName',
                           namespace=NAMESPACE),
@@ -120,7 +125,7 @@ class AWSConnection:
 
     def destroyNode(self, node_id):
         """
-        >>> aws = AWSConnection(EC2_ACCESS_ID, EC2_SECRET_KEY)
+        >>> aws = EC2Connection(EC2_ACCESS_ID, EC2_SECRET_KEY)
         >>> node = aws.createNode(IMAGE, SIZE_ID, SIZE)
         >>> aws.destroyNode(node.id)
         >>> node in node.getNodes()
@@ -135,7 +140,7 @@ class AWSConnection:
             cloudDict[getattr(item, property)] = item
         return cloudDict
     
-class AWSSecurityGroup:
+class EC2SecurityGroup:
     """
     A security group
     """
@@ -167,4 +172,3 @@ class AWSSecurityGroup:
         List all available rules.
         """
         return self.rules
-    
