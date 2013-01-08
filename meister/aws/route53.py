@@ -56,29 +56,55 @@ class Route53Connection:
     def deleteZone(self, zone):
         conn = httplib.HTTPSConnection(self.ROUTE53_ENDPOINT)
         conn.request("DELETE", self.path + zone.id, '', self.headers)
-        response = conn.getresponse()
-        result = response.read()
-        conn.close()     
+        conn.close()
+        
+    def getZones(self, limit=100):
+        """
+        Get a list of zones.
+        @param limit
+            The limit of items to return
+        @return: 
+            Zone[] an array of Zone objects.
+        @todo Make sure we can support more domains than 100.
+        """
+        conn = httplib.HTTPSConnection(self.ROUTE53_ENDPOINT)
+        conn.request("GET", self.path + "/hostedzone?maxitems={0}".format(limit), '', self.headers)
+        response = conn.getresponse().read()
+        return self.zonesFromResponse(response)
+        
+    def zonesFromResponse(self, result):
+        """
+        Convert a response from rotue 53 to a Zone object.
+        @param result
+        @return: Zone
+        """
+        root = ET.fromstring(result) 
+        zoneObjects = []
+        for zone in root.findall("./{0}/{1}".format(self.getTagName('HostedZones'), self.getTagName('HostedZone'))):
+            zoneObjects.append(self.zoneFromResponse(zone))
+        return zoneObjects
         
     def zoneFromResponse(self, result):
         """
         Create a Zone object from an AWS response.
-        @param result: A createdZoneResonse from AWS. 
+        @param result: A createdZoneResonse from AWS.  
         """
-        root = ET.fromstring(result)
-        zone = root.find(self.getTagName("HostedZone"))
+        root = ET.fromstring(result) if not isinstance(result, ET.Element) else result
+        zone = root if root.tag == self.getTagName("HostedZone") else root.find(self.getTagName("HostedZone"))
         # Basic info
         zoneObj = Zone(
-                       zone.find(self.getTagName("Name")).text,
-                       zone.find("./{0}/{1}".format(self.getTagName("Config"), self.getTagName("Comment"))).text,
-                       zone.find(self.getTagName("CallerReference")).text,
-                       zone.find(self.getTagName("Id")).text,
+                       name=zone.find(self.getTagName("Name")).text,
+                       callerReference=zone.find(self.getTagName("CallerReference")).text,
+                       id=zone.find(self.getTagName("Id")).text,
                        )
+        comment = zone.find("./{0}/{1}".format(self.getTagName("Config"), self.getTagName("Comment")))
+        if comment is not None:
+            zoneObj.comment = comment.text
         servers = root.findall('./{0}/{1}/{2}'.format(self.getTagName("DelegationSet"), self.getTagName("NameServers"), self.getTagName("NameServer")))
         for server in servers:
             zoneObj.addNameServer(server.text)
         return zoneObj
-    
+
     def getTagName(self, name):
         return "{https://route53.amazonaws.com/doc/2012-02-29/}" + name
        
