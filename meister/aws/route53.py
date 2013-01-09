@@ -37,27 +37,102 @@ class Route53Connection:
         @param comment
             A comment about this zone.
         """
-        identifier = "request-create-{0}-{1}".format(zone.name, self.date)
-        request = '''<?xml version="1.0" encoding="UTF-8"?>
-        <CreateHostedZoneRequest xmlns="https://route53.amazonaws.com/doc/2012-02-29/">
-           <Name>{0}</Name>
-           <CallerReference>{1}</CallerReference>
-           <HostedZoneConfig>
-              <Comment>{2}</Comment>
-           </HostedZoneConfig>
-           </CreateHostedZoneRequest>'''.format(zone.name, identifier, zone.comment)
         conn = httplib.HTTPSConnection(self.ROUTE53_ENDPOINT)
-        conn.request("POST", self.path + "/hostedzone", request, self.headers)
-        response = conn.getresponse()
-        result = response.read()
+        changes = []
+        if not zone.id:
+            identifier = "request-create-{0}-{1}".format(zone.name, self.date)
+            request = '''<?xml version="1.0" encoding="UTF-8"?>
+            <CreateHostedZoneRequest xmlns="https://route53.amazonaws.com/doc/2012-02-29/">
+               <Name>{0}</Name>
+               <CallerReference>{1}</CallerReference>
+               <HostedZoneConfig>
+                  <Comment>{2}</Comment>
+               </HostedZoneConfig>
+               </CreateHostedZoneRequest>'''.format(zone.name, identifier, zone.comment)
+            conn.request("POST", self.path + "/hostedzone", request, self.headers)
+            response = conn.getresponse()
+            result = response.read()
+            zone = self.zoneFromResponse(result)
+            zone.records.update(self.getRecords(zone, conn))
+            records = zone.records.values()
+        else:
+            # Fetch actual records.
+            savedRecords = self.getRecords(zone, conn)
+            records = [record for name, record in zone.records.items()]
+            for name, record in savedRecords.items():
+                if not name in zone.records.keys():
+                    record["action"] = "DELETE"
+                    records.append(record)
+                    
+        for record in records:
+            if not record["saved"]:
+                action = record["action"] if "action" in record.keys() else "CREATE"
+                resourceRecords = ''
+                for value in record["value"]:
+                    resourceRecords += "<ResourceRecord><Value>{0}</Value></ResourceRecord>".format(value)
+
+                change = """
+                    <Change>
+                        <Action>{0}</Action>
+                        <ResourceRecordSet>
+                            <Name>{1}</Name>
+                            <Type>{2}</Type>
+                            <TTL>{3}</TTL>
+                            <ResourceRecords>
+                            {4}
+                            </ResourceRecords>
+                        </ResourceRecordSet>
+                    </Change>
+                """.format(action, record["name"], record["type"], record["ttl"], resourceRecords)
+                changes.append(change)
+        if len(changes):
+            request = """<?xml version="1.0" encoding="UTF-8"?>
+                    <ChangeResourceRecordSetsRequest xmlns="https://route53.amazonaws.com/doc/2012-02-29/">
+                        <ChangeBatch>
+                            <Changes>
+                                {0}
+                            </Changes>
+                        </ChangeBatch>
+                  </ChangeResourceRecordSetsRequest>
+            """.format(''.join(changes))
+            conn.request("POST", self.path + zone.id + "/rrset", request, self.headers)
+            response = conn.getresponse()
+            if response.status != 200:
+                raise Exception("Could not save zones")
+            for name, record in zone.records.items():
+                record["saved"] = True
         conn.close()
-        return self.zoneFromResponse(result)
-        
+        return zone
+    
+    def getRecords(self, zone, conn):
+        """
+        Get records for a zone.
+        @param zone: The zone to get the records for.
+        """            
+        conn.request("GET", self.path + zone.id + "/rrset", "", self.headers) 
+        return self.recordsFromResponse(conn.getresponse().read())
+
+       
     def deleteZone(self, zone):
         conn = httplib.HTTPSConnection(self.ROUTE53_ENDPOINT)
         conn.request("DELETE", self.path + zone.id, '', self.headers)
         conn.close()
         
+    def recordsFromResponse(self, response):
+        root = ET.fromstring(response).find(self.getTagName("ResourceRecordSets"))
+        records = {}
+        for recordSet in root.findall(self.getTagName("ResourceRecordSet")):
+            record = {}
+            record['name'] = recordSet.find(self.getTagName("Name")).text
+            record['type'] = recordSet.find(self.getTagName("Type")).text
+            record['value'] = [value.text for value in recordSet.findall("./{0}/{1}/{2}".format(
+                                                                                       self.getTagName("ResourceRecords"),
+                                                                                       self.getTagName("ResourceRecord"),
+                                                                                       self.getTagName("Value")))]
+            record['saved'] = True
+            records[record["name"]] = record
+        return records
+
     def getZones(self, limit=100):
         """
         Get a list of zones.
@@ -111,6 +186,9 @@ class Route53Connection:
 
    
 class Zone:
+    RECORDTYPE_A = "A"
+    RECORDTYPE_CNAME = "CNAME"
+    
     """
     The Zone object describes a zone.
     """
@@ -120,6 +198,20 @@ class Zone:
         self.callerReference = callerReference
         self.comment = comment
         self.nameservers = []
+        self.records = {}
         
     def addNameServer(self, name):
         self.nameservers.append(name)
+
+    def addRecord(self, type, name, value, ttl = 120, saved = False):
+        if not isinstance(value, list):
+            value = [value]
+        record = {
+            "type": type,
+            "name": name,
+            "ttl": ttl,
+            "value": value,
+            "saved": saved
+        }
+        self.records[name] = record
+        return record
