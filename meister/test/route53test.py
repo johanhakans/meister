@@ -11,22 +11,22 @@ class Route53Test(unittest.TestCase):
         self.con = route53.Route53Connection(EC2_ACCESS_ID, EC2_SECRET_KEY)
         self.zoneObjs = []
         
-#    def testCreateZone(self):
-#        zone = route53.Zone("onedomain.com.", "Example domain")
-#        zone = self.con.saveZone(zone)
-#        self.assertEqual(zone.name, "onedomain.com.")
-#        self.assertEqual(zone.comment, "Example domain")
-#        self.con.deleteZone(zone)
-#        
-#    def testGetZones(self):
-#        zones = ["example.com.", "example2.com.", "example3.com."]
-#        self.zoneObjs = [self.con.saveZone(route53.Zone(zone)) for zone in zones]
-#        fetchedObjs = self.con.getZones()
-#        def filterZones(val):
-#            return val.name in zones
-#        fetchedZones = [zone.name for zone in filter(filterZones, fetchedObjs)]
-#        fetchedZones.sort()
-#        self.assertEqual(fetchedZones, zones)
+    def testCreateZone(self):
+        zone = route53.Zone("onedomain.com.", "Example domain")
+        zone = self.con.saveZone(zone)
+        self.assertEqual(zone.name, "onedomain.com.")
+        self.assertEqual(zone.comment, "Example domain")
+        self.con.deleteZone(zone)
+        
+    def testGetZones(self):
+        zones = ["example.com.", "example2.com.", "example3.com."]
+        self.zoneObjs = [self.con.saveZone(route53.Zone(zone)) for zone in zones]
+        fetchedObjs = self.con.getZones()
+        def filterZones(val):
+            return val.name in zones
+        fetchedZones = [zone.name for zone in filter(filterZones, fetchedObjs)]
+        fetchedZones.sort()
+        self.assertEqual(fetchedZones, zones)
     
     def testCreateRecord(self):
         zone = self.con.saveZone(route53.Zone("onedomain.com.", "Example domain"))
