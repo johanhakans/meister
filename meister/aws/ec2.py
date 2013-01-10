@@ -3,7 +3,6 @@ Created on Nov 22, 2012
 
 @author: fabsor
 '''
-from libcloud.compute.types import Provider
 from libcloud.compute.providers import get_driver
 from libcloud.utils.xml import fixxpath, findtext, findattr, findall
 from libcloud.compute.drivers.ec2 import NAMESPACE 
