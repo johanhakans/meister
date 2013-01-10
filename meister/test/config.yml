@@ -7,6 +7,7 @@ managementServer: mgmt
 puppetRepo:
     url: "git@github.com:WKLive/example-puppet-master"
     branch: master
+
 # The driver to use.
 driver:
     name: AWSDriver
@@ -14,9 +15,12 @@ driver:
     key: your-key
     region: your-region
     defaultSecurityGroup: group
+    defaultZone: eu-west-1a
+
 # DNS Provider.
 dns:
     name: Provider
+    zone: example.com.
 
 # Security groups with firewall rules.
 securityGroups:
@@ -42,20 +46,21 @@ nodes:
     mgmt:
         hostname: mgmt
         size: t1.micro
-        externalDNS: mgmt.dns
-        internalDNS: mgmt.internal.dns
+        diskSize: 20 # Size in GB. Defaults to 8gb
+        externalDNS: mgmt.example.com.
+        internalDNS: mgmt.internal.example.com.
         image: ami-c1aaabb5
     application1:
         hostname: application1
         size: t1.micro
         image: ami-c1aaabb5
-        externalDNS: application1.dns
-        internalDNS: application1.internal.dns
+        externalDNS: application1.example.com.
+        internalDNS: application1.internal.example.com.
     application2:
         hostname: application2
         size: t1.micro
-        externalDNS: application2.dns
-        internalDNS: application2.internal.dns
+        externalDNS: application2.example.com. # Binds to external IP address
+        internalDNS: application2.internal.example.com. # Binds to internal IP address
         image: ami-c1aaabb5
         securityGroup: group2
 

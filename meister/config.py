@@ -36,12 +36,13 @@ class AWSDriver:
         self.aws_id = settings['driver']['id']
         self.aws_key = settings['driver']['key']
         self.aws_region = settings['driver']['region']
+        self.defaultZone = settings["driver"]["defaultZone"]
         self.defaultSecurityGroup = settings['driver']['defaultSecurityGroup']
         config.getSecurityGroups = self.getSecurityGroups
         if 'securityGroups' in settings.keys():
             self.securityGroups = settings['securityGroups']
-        
-         
+
+
     def getSecurityGroups(self):
         return self.securityGroups
         
@@ -59,10 +60,16 @@ class Node:
         self.hostname = definition['hostname']
         for prop in ["externalDNS", "internalDNS"]:
             if prop in definition:
-                setattr(self, name, definition[prop])
+                setattr(self, prop, definition[prop])
 
 class AWSNode(Node):
     def __init__(self, name, definition):
+        defaults = {
+            "diskSize": "8"
+        }
         Node.__init__(self, name, definition)
-        for prop in ['image', 'securityGroup', 'size']:
-            setattr(self, prop, definition[prop])
+        for prop in ['image', 'securityGroup', 'size', 'diskSize']:
+            if prop in definition:
+                setattr(self, prop, definition[prop])
+            elif prop in defaults:
+                setattr(self, prop, defaults[prop])
