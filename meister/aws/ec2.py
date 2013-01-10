@@ -105,11 +105,14 @@ class EC2Connection:
          'MaxCount': '1',
          'InstanceType': size_id,
          'BlockDeviceMapping.0.DeviceName': '/dev/sda1',
-         'BlockDeviceMapping.0.Ebs.VolumeSize': size,
+         'BlockDeviceMapping.0.Ebs.VolumeSize': str(size),
          
         }
         if securityGroup:
             params['SecurityGroup.0'] = securityGroup
+        if zone:
+            params['Placement.AvailabilityZone'] = zone
+ 
         object = self.conn.connection.request(self.conn.path, params=params).object
         nodes = self.conn._to_nodes(object, 'instancesSet/item')
         for node in nodes:
