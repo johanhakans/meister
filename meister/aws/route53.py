@@ -34,7 +34,7 @@ class Route53Connection:
         self.id = id
         self.key = key
         self.path = "/{0}/".format(self.ROUTE53_API);
-        conn = httplib.HTTPSConnection(self.ROUTE53_ENDPOINT);
+        conn = self.getConnection()
         conn.request('get', "/date");
         response = conn.getresponse()
         self.date = response.getheader("Date", False)
@@ -45,7 +45,34 @@ class Route53Connection:
             'X-Amzn-Authorization': "AWS3-HTTPS AWSAccessKeyId={0},Algorithm=HmacSHA1,Signature={1}".format(id, self.token)
         }
         print self.headers
-        
+
+    def getZone(self, id):
+        conn = self.getConnection()
+        response = self.request("GET", id, conn = conn)
+        zone = self.zoneFromResponse(response)
+        zone.records.update(self.getRecords(zone, conn))
+        conn.close()
+        return zone
+
+    def getConnection(self):
+        return httplib.HTTPSConnection(self.ROUTE53_ENDPOINT)
+
+    def request(self, method, path, body = None, conn = None, close = False):
+        if not conn:
+            conn = self.getConnection()
+            close = True
+        conn.request(method, self.path + path, body, self.headers)
+        response = conn.getresponse()
+        body = response.read()
+        if close:
+            conn.close()
+        # Something went wrong.
+        if response.status > 399:
+            raise Route53Exception(body, response.status)
+
+        return body
+
+
     def saveZone(self, zone):
         """
         Save a zone to route 53.
@@ -54,7 +81,7 @@ class Route53Connection:
         @param comment
             A comment about this zone.
         """
-        conn = httplib.HTTPSConnection(self.ROUTE53_ENDPOINT)
+        conn = self.getConnection()
         changes = []
         if not zone.id:
             identifier = "request-create-{0}-{1}".format(zone.name, self.date)
@@ -66,10 +93,7 @@ class Route53Connection:
                   <Comment>{2}</Comment>
                </HostedZoneConfig>
                </CreateHostedZoneRequest>'''.format(zone.name, identifier, zone.comment)
-            conn.request("POST", self.path + "/hostedzone", request, self.headers)
-            response = conn.getresponse()
-            result = response.read()
-            zone = self.zoneFromResponse(result)
+            zone = self.zoneFromResponse(self.request("POST", "/hostedzone", request, conn))
             zone.records.update(self.getRecords(zone, conn))
             records = zone.records.values()
         else:
@@ -79,10 +103,11 @@ class Route53Connection:
             for name, record in savedRecords.items():
                 if not name in zone.records.keys():
                     record["action"] = "DELETE"
+                    record["saved"] = False
                     records.append(record)
                     
         for record in records:
-            if not record["saved"]:
+            if not record["saved"] and (record["type"] == "A" or record["type"] == "CNAME"):
                 action = record["action"] if "action" in record.keys() else "CREATE"
                 resourceRecords = ''
                 for value in record["value"]:
@@ -112,10 +137,7 @@ class Route53Connection:
                         </ChangeBatch>
                   </ChangeResourceRecordSetsRequest>
             """.format(''.join(changes))
-            conn.request("POST", self.path + zone.id + "/rrset", request, self.headers)
-            response = conn.getresponse()
-            if response.status != 200:
-                raise Exception("Could not save zones")
+            self.request("POST", zone.id + "/rrset", request, conn=conn)
             for name, record in zone.records.items():
                 record["saved"] = True
         conn.close()
@@ -126,14 +148,14 @@ class Route53Connection:
         Get records for a zone.
         @param zone: The zone to get the records for.
         """            
-        conn.request("GET", self.path + zone.id + "/rrset", "", self.headers) 
-        return self.recordsFromResponse(conn.getresponse().read())
+        return self.recordsFromResponse(self.request("GET", zone.id + "/rrset", conn=conn))
 
        
     def deleteZone(self, zone):
-        conn = httplib.HTTPSConnection(self.ROUTE53_ENDPOINT)
-        conn.request("DELETE", self.path + zone.id, '', self.headers)
-        conn.close()
+        # Purge all records.
+        zone.records = {}
+        self.saveZone(zone)
+        self.request("DELETE", zone.id)
         
     def recordsFromResponse(self, response):
         root = ET.fromstring(response).find(self.getTagName("ResourceRecordSets"))
@@ -142,6 +164,7 @@ class Route53Connection:
             record = {}
             record['name'] = recordSet.find(self.getTagName("Name")).text
             record['type'] = recordSet.find(self.getTagName("Type")).text
+            record['ttl'] = recordSet.find(self.getTagName("TTL")).text
             record['value'] = [value.text for value in recordSet.findall("./{0}/{1}/{2}".format(
                                                                                        self.getTagName("ResourceRecords"),
                                                                                        self.getTagName("ResourceRecord"),
@@ -159,10 +182,7 @@ class Route53Connection:
             Zone[] an array of Zone objects.
         @todo Make sure we can support more domains than 100.
         """
-        conn = httplib.HTTPSConnection(self.ROUTE53_ENDPOINT)
-        conn.request("GET", self.path + "/hostedzone?maxitems={0}".format(limit), '', self.headers)
-        response = conn.getresponse().read()
-        return self.zonesFromResponse(response)
+        return self.zonesFromResponse(self.request("GET", "/hostedzone?maxitems={0}".format(limit)))
         
     def zonesFromResponse(self, result):
         """
@@ -175,7 +195,7 @@ class Route53Connection:
         for zone in root.findall("./{0}/{1}".format(self.getTagName('HostedZones'), self.getTagName('HostedZone'))):
             zoneObjects.append(self.zoneFromResponse(zone))
         return zoneObjects
-        
+
     def zoneFromResponse(self, result):
         """
         Create a Zone object from an AWS response.
@@ -199,13 +219,12 @@ class Route53Connection:
 
     def getTagName(self, name):
         return "{https://route53.amazonaws.com/doc/2012-02-29/}" + name
-       
 
-   
+
 class Zone:
     RECORDTYPE_A = "A"
     RECORDTYPE_CNAME = "CNAME"
-    
+
     """
     The Zone object describes a zone.
     """
@@ -232,3 +251,6 @@ class Zone:
         }
         self.records[name] = record
         return record
+
+    def deleteRecord(self, name):
+        del self.records[name]
