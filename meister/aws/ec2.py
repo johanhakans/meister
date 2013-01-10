@@ -19,12 +19,15 @@ class EC2Connection:
         self.securityGroups = None
         self.nodes = None
 
-    def getNodes(self):
+    def getNodes(self, reset = False):
         """
         Get a list of nodes.
         """
-        if not self.nodes:
-            self.nodes = self.getDict(self.conn.list_nodes(), 'name')
+        if not self.nodes or reset:
+            # Exclude terminated instances.
+            def filterTerminated(item):
+                return item.extra["status"] != "terminated"
+            self.nodes = self.getDict(self.conn.list_nodes(), 'name', filterTerminated)
         return self.nodes
 
     def createSecurityGroup(self, name, description):
@@ -136,10 +139,11 @@ class EC2Connection:
         if nodes[node_id]:
             return self.conn.destroy_node(nodes[node_id])
       
-    def getDict(self, libcloudlist, property="id"):
+    def getDict(self, libcloudlist, property="id", filterFn = None):
         cloudDict = {}
         for item in libcloudlist:
-            cloudDict[getattr(item, property)] = item
+            if not filterFn or filterFn(item):
+                cloudDict[getattr(item, property)] = item
         return cloudDict
     
 class EC2SecurityGroup:
