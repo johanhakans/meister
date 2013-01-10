@@ -23,3 +23,8 @@ class AWSProvisionerTest(unittest.TestCase):
         config = YamlConfig("config_aws.yml")
         driver = config.getDriver()
         driver.provision(self.listLogger)
+        dnsDriver = config.getDNSDriver()
+        dnsDriver.provision(config.getNodes(), self.listLogger)
+        driver.terminate(self.listLogger)
+        dnsDriver.terminate(config.getNodes(), self.listLogger)
+        print self.listLogger.logs

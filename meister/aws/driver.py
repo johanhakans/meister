@@ -60,26 +60,34 @@ class EC2Driver:
         provisioner.provisionSecurityGroups(self.getSecurityGroups())
         provisioner.provisionNodes(self.config.getNodes())
         provisioner.verify(self.config.getNodes())
+        
+    def terminate(self, logger):
+        """
+        Terminate all nodes in this configuration.
+        """
+        provisioner = Provisioner(self.getConnection(), logger)
+        provisioner.deleteNodes(self.config.getNodes())
+        provisioner.deleteSecurityGroups(self.getSecurityGroups())
 
 
 class Route53Driver:
     def __init__(self, config, settings):
-        self.aws_id = settings['id']
-        self.aws_key = settings['key']
-        self.defaultZone = settings['defaultZone']
-        self.config = config 
+        self.aws_id = settings['DNS']['id']
+        self.aws_key = settings['DNS']['key']
+        self.defaultZone = settings['DNS']['defaultZone']
+        self.config = config
     
     def getConnection(self):
-        return route53.Route53Connection(self.aws_id, self.aws_id)
+        return route53.Route53Connection(self.aws_id, self.aws_key)
     
     def provision(self, nodes, logger):
         con = self.getConnection()
         zones = con.getZones()
         if not self.defaultZone in zones:
-            zone = con.saveZone(self.defaultZone)
+            zone = con.saveZone(route53.Zone(self.defaultZone))
         else:
             zone = con.getZone(zones[self.defaultZone].id)
-        for node in nodes:
+        for node in nodes.values():
             for ipProp,nameProp in [("internalIp", "internalDNS"), ("externalIp", "externalDNS")]:
                 if hasattr(node, ipProp) and hasattr(node, nameProp):
                     ip =  getattr(node, ipProp)
@@ -90,6 +98,14 @@ class Route53Driver:
                     elif ip not in record["value"]:
                         record.append(ip)
                         zone.updateRecord(name, record)
+        con.saveZone(zone)
+
+    def terminate(self, nodes, logger):
+        con = self.getConnection()
+        zones = con.getZones()
+        if self.defaultZone in zones:
+            logger.log("Deleting zone {0}".format(self.defaultZone))
+            con.deleteZone(zones[self.defaultZone])
 
 class AWSNode():
     def __init__(self, name, definition):

@@ -41,12 +41,19 @@ class Provisioner:
         """
         Terminate all nodes from a configuration.
         """
-        connection = ec2.EC2Connection(self.region, self.id, self.key)
-        existingNodes = connection.getNodes()
+        existingNodes = self.connection.getNodes()
         for name in nodes.keys():
             if name in existingNodes:
+                self.logger.log("Deleting node {0}".format(name))
                 existingNodes[name].destroy()
-                
+    
+    def deleteSecurityGroups(self, groups):
+        existingGroups = self.connection.getSecurityGroups()
+        for name in groups.keys():
+            if name in existingGroups:
+                self.logger.log("Deleting security group {0}".format(name))
+                self.connection.deleteSecurityGroup(name)
+
     def verify(self, nodes, wait=10):
         """
         Verify changes by waiting until the servers are done 

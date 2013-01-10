@@ -18,9 +18,11 @@ driver:
     defaultZone: eu-west-1a
 
 # DNS Provider.
-dns:
+DNS:
     name: Provider
-    zone: example.com.
+    id: your-id
+    key: your-key
+ 	defaultZone: example.com.
 
 # Security groups with firewall rules.
 securityGroups:
