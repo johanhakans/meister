@@ -36,6 +36,15 @@ class Route53Test(unittest.TestCase):
         self.con.saveZone(zone)
         for record in zone.records.values():
             self.assertTrue(record["saved"])
+    
+    def testDeleteRecord(self):
+        zone = self.con.saveZone(route53.Zone("onedomain.com.", "Example domain"))
+        self.zoneObjs.append(zone)
+        zone.addRecord(zone.RECORDTYPE_A, "test.onedomain.com.", "10.1.1.1")
+        zone.deleteRecord("test.onedomain.com.")
+        zone = self.con.getZone(zone.id)
+        self.assertTrue("test.onedomain.com." not in zone.records.keys())
+        
                 
     def tearDown(self):
         unittest.TestCase.tearDown(self)
