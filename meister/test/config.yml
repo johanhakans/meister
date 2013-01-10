@@ -10,7 +10,7 @@ puppetRepo:
 
 # The driver to use.
 driver:
-    name: AWSDriver
+    name: aws
     id: your-id
     key: your-key
     region: your-region

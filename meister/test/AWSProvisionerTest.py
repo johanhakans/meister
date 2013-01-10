@@ -5,21 +5,21 @@ Created on Jan 10, 2013
 '''
 import unittest
 from meister.config import YamlConfig
-from meister.provision import AWSProvisioner
-from meister.provision import PrintLogger
 
+
+class ListLogger():
+    def __init__(self):
+        self.logs = []
+
+    def log(self, message, type = 'notice'):
+        self.logs.append({"message": message, "type": type})
 
 class AWSProvisionerTest(unittest.TestCase):
+    
+    def setUp(self):
+        self.listLogger = ListLogger()
 
-
-    def testProvisionNodes(self):
+    def testProvision(self):
         config = YamlConfig("config_aws.yml")
-        provisioner = AWSProvisioner(config, PrintLogger())
-        provisioner.provisionNodes(config.getNodes())
-
-    def testProvisionSecurityGroups(self):
-        config = YamlConfig("config_aws.yml")
-        provisioner = AWSProvisioner(config, PrintLogger())
-        provisioner.provisionSecurityGroups(config.getDriver().getSecurityGroups())
-
-
+        driver = config.getDriver()
+        driver.provision(self.listLogger)
