@@ -66,6 +66,7 @@ class Provisioner:
                     time.sleep(wait)
                     return self.verify(nodes, wait)
                 else:
+                    self.logger.log("Node {0} is running".format(name))
                     # Complete nodes with extra information.
                     nodes[name].internalIp = existingNodes[name].private_ip[0]
                     nodes[name].externalIp = existingNodes[name].public_ip[0]

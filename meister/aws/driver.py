@@ -67,6 +67,7 @@ class EC2Driver:
         """
         provisioner = Provisioner(self.getConnection(), logger)
         provisioner.deleteNodes(self.config.getNodes())
+        provisioner.verify(self.config.getNodes())
         provisioner.deleteSecurityGroups(self.getSecurityGroups())
 
 
@@ -84,8 +85,10 @@ class Route53Driver:
         con = self.getConnection()
         zones = con.getZones()
         if not self.defaultZone in zones:
+            logger.log("Creating Zone {0}".format(self.defaultZone))
             zone = con.saveZone(route53.Zone(self.defaultZone))
         else:
+            logger.log("Using zone {0}".format(self.defaultZone))
             zone = con.getZone(zones[self.defaultZone].id)
         for node in nodes.values():
             for ipProp,nameProp in [("internalIp", "internalDNS"), ("externalIp", "externalDNS")]:
@@ -94,8 +97,10 @@ class Route53Driver:
                     name = getattr(node, nameProp)
                     record = zone.getRecord(name)
                     if not record:
+                        logger.log("Creating record {0}".format(name))
                         zone.addRecord("A", name, ip)
                     elif ip not in record["value"]:
+                        logger.log("Updating record {0}".format(name))
                         record.append(ip)
                         zone.updateRecord(name, record)
         con.saveZone(zone)

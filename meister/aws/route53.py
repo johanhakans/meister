@@ -44,7 +44,6 @@ class Route53Connection:
             "Date": self.date,
             'X-Amzn-Authorization': "AWS3-HTTPS AWSAccessKeyId={0},Algorithm=HmacSHA1,Signature={1}".format(id, self.token)
         }
-        print self.headers
 
     def getZone(self, id):
         conn = self.getConnection()
