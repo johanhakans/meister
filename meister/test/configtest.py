@@ -24,7 +24,10 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(mgmt.image, 'ami-c1aaabb5')
         self.assertEqual(mgmt.size, 't1.micro')
         self.assertEqual(mgmt.hostname, 'mgmt')
+        self.assertEqual(mgmt.externalDNS, 'mgmt.example.com.')
+        self.assertEqual(mgmt.internalDNS, 'mgmt.internal.example.com.')
         self.assertEqual(mgmt.securityGroup, 'group')
+        self.assertEqual(mgmt.diskSize, 20)
         
         # Application 2 should have it's own group
         application2 = nodes["application2"]
