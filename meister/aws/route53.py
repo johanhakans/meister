@@ -9,6 +9,23 @@ import hmac
 from base64 import b64encode
 import xml.etree.ElementTree as ET 
 
+class Route53Exception(Exception):
+    """
+    Exception handler for Route 53 error responses.
+    """
+    def __init__(self, message, code = None):
+        self.errors = []
+        self.root = ET.fromstring(message)
+        for error in self.root.iter(self.getTagName("Message")):
+            self.errors.append(error.text) 
+        self.code = code
+
+    def getTagName(self, name):
+        return "{https://route53.amazonaws.com/doc/2012-02-29/}" + name
+
+    def __str__(self):
+        return "\n".join(self.errors)
+
 class Route53Connection:
     ROUTE53_ENDPOINT = "route53.amazonaws.com"
     ROUTE53_API = "2012-02-29"
