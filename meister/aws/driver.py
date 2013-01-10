@@ -58,7 +58,8 @@ class EC2Driver:
         """
         provisioner = Provisioner(self.getConnection(), logger)
         provisioner.provisionSecurityGroups(self.getSecurityGroups())
-        nodes = provisioner.provisionNodes(self.config.getNodes())
+        provisioner.provisionNodes(self.config.getNodes())
+        provisioner.verify(self.config.getNodes())
 
 
 class Route53Driver:

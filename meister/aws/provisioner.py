@@ -5,6 +5,7 @@ Created on Jan 10, 2013
 '''
 from aws import ec2
 from libcloud.compute.types import Provider
+import time
 
 class Provisioner:
     
@@ -45,3 +46,19 @@ class Provisioner:
         for name in nodes.keys():
             if name in existingNodes:
                 existingNodes[name].destroy()
+                
+    def verify(self, nodes, wait=10):
+        """
+        Verify changes by waiting until the servers are done 
+        """
+        existingNodes = self.connection.getNodes(True)
+        for name in nodes.keys():
+            if name in existingNodes:
+                if existingNodes[name].extra['status'] != "running":
+                    self.logger.log("Node {0} is not ready. Waiting for {1} seconds.".format(name, wait))
+                    time.sleep(wait)
+                    return self.verify(nodes, wait)
+                else:
+                    # Complete nodes with extra information.
+                    nodes[name].internalIp = existingNodes[name].private_ip[0]
+                    nodes[name].externalIp = existingNodes[name].public_ip[0]
