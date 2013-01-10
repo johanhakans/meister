@@ -31,12 +31,19 @@ class YamlConfig(Config):
     Parses and makes configuration accessible.
     '''
     def __init__(self, configFile):
-        '''
-        
-        '''
         self.configFile = configFile
         self.DNSDriver = None
         self.parse()
+
+    def provision(self, logger):
+        self.driver.provision(logger)
+        if self.DNSDriver:
+            self.DNSDriver.provision(self.getNodes(), logger)
+
+    def terminate(self, logger):
+        self.driver.terminate(logger)
+        if self.DNSDriver:
+            self.DNSDriver.terminate(self.getNodes(), logger)
 
     def parse(self):
         data = yaml.load(open(self.configFile).read())
