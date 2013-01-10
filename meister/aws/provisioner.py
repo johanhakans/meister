@@ -17,10 +17,12 @@ class Provisioner:
         existingGroups = self.connection.getSecurityGroups()
         for name, group in groups.items():
             if not name in existingGroups:
+                self.logger.log("Creating security group {0}".format(name))
                 ec2Group = self.connection.createSecurityGroup(name, group["description"])
             else:
                 ec2Group = existingGroups[name]
             for rule in group["rules"]:
+                self.logger.log("Creating rule {0}:{1}-{2}".format(rule["ip"], rule["fromPort"], rule["toPort"]))
                 ec2Group.addRule(rule["fromPort"], rule["toPort"], rule["ip"])
 
     def provisionNodes(self, nodes):
