@@ -22,9 +22,9 @@ class Route53Test(unittest.TestCase):
         zones = ["example.com.", "example2.com.", "example3.com."]
         self.zoneObjs = [self.con.saveZone(route53.Zone(zone)) for zone in zones]
         fetchedObjs = self.con.getZones()
-        def filterZones(val):
-            return val.name in zones
-        fetchedZones = [zone.name for zone in filter(filterZones, fetchedObjs)]
+        def filterZones(item):
+            return item in zones
+        fetchedZones = filter(filterZones, fetchedObjs.keys())
         fetchedZones.sort()
         self.assertEqual(fetchedZones, zones)
     

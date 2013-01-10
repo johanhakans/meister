@@ -29,7 +29,7 @@ class Route53Exception(Exception):
 class Route53Connection:
     ROUTE53_ENDPOINT = "route53.amazonaws.com"
     ROUTE53_API = "2012-02-29"
-    
+
     def __init__(self, id, key):
         self.id = id
         self.key = key
@@ -140,7 +140,8 @@ class Route53Connection:
             self.request("POST", zone.id + "/rrset", request, conn=conn)
             for name, record in zone.records.items():
                 record["saved"] = True
-                del record["action"]
+                if "action" in record:
+                    del record["action"]
 
         conn.close()
         return zone
@@ -168,9 +169,9 @@ class Route53Connection:
             record['type'] = recordSet.find(self.getTagName("Type")).text
             record['ttl'] = recordSet.find(self.getTagName("TTL")).text
             record['value'] = [value.text for value in recordSet.findall("./{0}/{1}/{2}".format(
-                                                                                       self.getTagName("ResourceRecords"),
-                                                                                       self.getTagName("ResourceRecord"),
-                                                                                       self.getTagName("Value")))]
+                self.getTagName("ResourceRecords"),
+                self.getTagName("ResourceRecord"),
+                self.getTagName("Value")))]
             record['saved'] = True
             records[record["name"]] = record
         return records
@@ -193,9 +194,10 @@ class Route53Connection:
         @return: Zone
         """
         root = ET.fromstring(result) 
-        zoneObjects = []
+        zoneObjects = {}
         for zone in root.findall("./{0}/{1}".format(self.getTagName('HostedZones'), self.getTagName('HostedZone'))):
-            zoneObjects.append(self.zoneFromResponse(zone))
+            zone = self.zoneFromResponse(zone)
+            zoneObjects[zone.name] = zone
         return zoneObjects
 
     def zoneFromResponse(self, result):
@@ -240,6 +242,9 @@ class Zone:
         
     def addNameServer(self, name):
         self.nameservers.append(name)
+    
+    def getRecord(self, name):
+        return self.records[name] if name in self.records else None
 
     def addRecord(self, type, name, value, ttl = 120, saved = False):
         if not isinstance(value, list):
