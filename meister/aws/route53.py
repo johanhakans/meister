@@ -140,6 +140,8 @@ class Route53Connection:
             self.request("POST", zone.id + "/rrset", request, conn=conn)
             for name, record in zone.records.items():
                 record["saved"] = True
+                del record["action"]
+
         conn.close()
         return zone
     
@@ -251,6 +253,10 @@ class Zone:
         }
         self.records[name] = record
         return record
+    def updateRecord(self, name, record):
+        record["saved"] = False
+        record["action"] = "UPDATE"
+        self.records[name] = record
 
     def deleteRecord(self, name):
         del self.records[name]
