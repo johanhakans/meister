@@ -51,7 +51,18 @@ class EC2Driver:
             definition["internalIp"] = nodes[name].private_ip[0] if len(nodes[name].private_ip) else None 
             definition["externalIp"] = nodes[name].public_ip[0] if len(nodes[name].public_ip) else None
         return AWSNode(name, definition)
-
+    
+    def info(self, logger):
+        con = self.getConnection()
+        savedNodes = con.getNodes()
+        con = self.getConnection()
+        for name, node in self.config.getNodes().items():
+            if name in savedNodes:
+                status = "running"
+            else:
+                status = "not started"
+            logger.log("\n" + str(node), status)
+        
     def provision(self, logger):
         """
         Provision configuration.
@@ -124,3 +135,9 @@ class AWSNode():
                 setattr(self, prop, definition[prop])
             elif prop in defaults:
                 setattr(self, prop, defaults[prop])
+    def __str__(self):
+        info = ""
+        for prop in ['name', 'hostname', 'image', 'securityGroup', 'size', 'diskSize', 'zone', "externalDNS", "internalDNS", "internalIp", "externalIp"]:
+            if hasattr(self, prop):
+                info += prop + ": " + str(getattr(self, prop)) + "\n"
+        return info

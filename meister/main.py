@@ -35,6 +35,9 @@ class PrintLogger():
 
     def log(self, message, type = "notice"):
         print "[{0}] {1}".format(type, message)
+    
+    def logMessage(self, message):
+        print message
 
 class CLIError(Exception):
     '''Generic exception to raise and log different fatal errors.'''
@@ -73,7 +76,7 @@ USAGE
     try:
         # Setup argument parser
         parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)
-        parser.add_argument('command', help="A command to execute")
+        parser.add_argument('command', help="A command to execute", default="info")
         parser.add_argument('-f', '--file', action='store', default="meister.py")
 
         # Process arguments
@@ -82,14 +85,17 @@ USAGE
         command = args.command
         file = args.file
         configuration = config.YamlConfig(file)
-
-        if command == "provision":
-            configuration.provision(logger)
-        elif command == "terminate":
-            configuration.terminate(logger)
+        commands = { 
+            "provision": { "cmd": lambda: configuration.provision(logger), "help": "Provision the configuration using the drivers provided." },
+            "terminate": { "cmd": lambda: configuration.terminate(logger), "help": "Terminate instances specified by the configuration file." },
+            "info": { "cmd": lambda: configuration.info(logger), "help": "Show information about the configuration and the current state." }
+        }
+        if command in commands:
+            commands[command]["cmd"]()
         else:
-            print "Command not found"
-
+            print "Available commands:\n"
+            for command, info in commands.items():
+                print "{0}: {1}".format(command, info["help"])
 
     except KeyboardInterrupt:
         ### handle keyboard interrupt ###
