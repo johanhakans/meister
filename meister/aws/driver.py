@@ -112,9 +112,8 @@ class Route53Driver:
                         logger.log("Creating record {0}".format(name))
                         zone.addRecord("A", name, ip)
                     elif ip not in record["value"]:
-                        logger.log("Updating record {0}".format(name))
-                        record.append(ip)
-                        zone.updateRecord(name, record)
+                        zone.deleteRecord(name)
+                        zone.addRecord("A", name, ip)
         con.saveZone(zone)
 
     def terminate(self, nodes, logger):
