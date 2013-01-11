@@ -5,7 +5,8 @@ Created on Nov 22, 2012
 '''
 from libcloud.compute.providers import get_driver
 from libcloud.utils.xml import fixxpath, findtext, findattr, findall
-from libcloud.compute.drivers.ec2 import NAMESPACE 
+from libcloud.compute.drivers.ec2 import NAMESPACE
+from libcloud.compute.deployment import ScriptDeployment
 
 class EC2Connection:
     """
@@ -18,6 +19,8 @@ class EC2Connection:
         self.conn = Driver(ec2_id, ec2_key)
         self.securityGroups = None
         self.nodes = None
+        
+        
 
     def getNodes(self, reset = False):
         """
@@ -96,7 +99,7 @@ class EC2Connection:
                           )
         return group
 
-    def createNode(self, image_id, size_id, name, size='8', securityGroup=None, zone=None):
+    def createNode(self, image_id, size_id, name, size='8', securityGroup=None, zone=None, keyName=None):
         """
         Create a node on aws.
         """
@@ -114,7 +117,9 @@ class EC2Connection:
             params['SecurityGroup.0'] = securityGroup
         if zone:
             params['Placement.AvailabilityZone'] = zone
- 
+        if keyName:
+            params["KeyName"] = keyName
+
         object = self.conn.connection.request(self.conn.path, params=params).object
         nodes = self.conn._to_nodes(object, 'instancesSet/item')
         for node in nodes:

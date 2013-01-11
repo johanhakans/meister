@@ -16,6 +16,7 @@ driver:
     region: your-region
     defaultSecurityGroup: group
     defaultZone: eu-west-1a
+    defaultKeyName: example
 
 # DNS Provider.
 DNS:

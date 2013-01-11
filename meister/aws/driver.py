@@ -27,6 +27,7 @@ class EC2Driver:
         self.aws_region = self.REGIONS[settings['driver']['region']]
         self.defaultZone = settings["driver"]["defaultZone"]
         self.defaultSecurityGroup = settings['driver']['defaultSecurityGroup']
+        self.defaultKeyName = settings['driver']['defaultKeyName']
         config.getSecurityGroups = self.getSecurityGroups
         self.config = config
         self.con = None
@@ -44,8 +45,8 @@ class EC2Driver:
     def getNode(self, name, definition):
         con = self.getConnection()
         nodes = con.getNodes()
-        for prop, defaultProp in {"securityGroup": "defaultSecurityGroup", "zone": "defaultZone"}.items():
-            if not prop in definition:
+        for prop, defaultProp in {"securityGroup": "defaultSecurityGroup", "zone": "defaultZone", "keyName": "defaultKeyName"}.items():
+            if not prop in definition and getattr(self, defaultProp, None):
                 definition[prop] = getattr(self, defaultProp)
         if name in nodes:
             definition["internalIp"] = nodes[name].private_ip[0] if len(nodes[name].private_ip) else None 
@@ -130,14 +131,14 @@ class AWSNode():
         }
         self.name = name
         self.hostname = definition['hostname']
-        for prop in ['image', 'securityGroup', 'size', 'diskSize', 'zone', "externalDNS", "internalDNS", "internalIp", "externalIp"]:
+        for prop in ['image', 'securityGroup', 'size', 'diskSize', 'zone', "externalDNS", "internalDNS", "internalIp", "externalIp", "keyName"]:
             if prop in definition:
                 setattr(self, prop, definition[prop])
             elif prop in defaults:
                 setattr(self, prop, defaults[prop])
     def __str__(self):
         info = ""
-        for prop in ['name', 'hostname', 'image', 'securityGroup', 'size', 'diskSize', 'zone', "externalDNS", "internalDNS", "internalIp", "externalIp"]:
+        for prop in ['name', 'hostname', 'image', 'securityGroup', 'size', 'diskSize', 'zone', "externalDNS", "internalDNS", "internalIp", "externalIp", "keyName"]:
             if hasattr(self, prop):
                 info += prop + ": " + str(getattr(self, prop)) + "\n"
         return info
