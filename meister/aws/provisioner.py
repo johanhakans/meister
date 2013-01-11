@@ -33,7 +33,7 @@ class Provisioner:
             # Create non-existing nodes.
             if not name in existingNodes:
                 self.logger.log("Creating node {0}".format(name))
-                self.connection.createNode(node.image, node.size, name, node.diskSize, node.securityGroup, node.zone)
+                self.connection.createNode(node.image, node.size, name, node.diskSize, node.securityGroup, node.zone, node.keyName)
             else:
                 self.logger.log("Node {0} already exists.".format(name))
 
