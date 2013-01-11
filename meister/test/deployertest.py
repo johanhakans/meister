@@ -28,6 +28,8 @@ class DeployerTest(unittest.TestCase):
         deployer.run("ls /")
         deployer.sudo("ls /")
         deployer.put("testfile", "/home/ubuntu/testfile")
+        import tasks
+        deployer.runTasks(tasks.test_task)
 
     def tearDown(self):
         unittest.TestCase.tearDown(self)

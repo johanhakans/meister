@@ -29,3 +29,7 @@ class Deployer:
     def sudo(self, command):
         with settings(host_string=self.hoststring, key_filename=self.keyFile):
             sudo(command)
+
+    def runTask(self, task):
+        with settings(host_string=self.hoststring, key_filename=self.keyFile):
+            task()
