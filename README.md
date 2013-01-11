@@ -6,6 +6,10 @@ configuration file that contains all configuration that you want to
 provision to a cloud hosting provider. That file can then be version
 controlled so that changes in the server stack are easily overviewed.
 
+# Installation
+    
+	(sudo) python setup.py install
+
 # The meister.yml file
 
     ---
