@@ -3,7 +3,7 @@ Created on Jan 10, 2013
 
 @author: fabsor
 '''
-from aws import ec2
+import ec2
 from libcloud.compute.types import Provider
 import time
 
@@ -54,7 +54,7 @@ class Provisioner:
                 self.logger.log("Deleting security group {0}".format(name))
                 self.connection.deleteSecurityGroup(name)
 
-    def verify(self, nodes, wait=10):
+    def verify(self, nodes, wait=10, waiting = False):
         """
         Verify changes by waiting until the servers are done 
         """
@@ -64,9 +64,12 @@ class Provisioner:
                 if existingNodes[name].extra['status'] != "running":
                     self.logger.log("Node {0} is not ready. Waiting for {1} seconds.".format(name, wait))
                     time.sleep(wait)
-                    return self.verify(nodes, wait)
+                    return self.verify(nodes, wait, True)
                 else:
                     self.logger.log("Node {0} is running".format(name))
                     # Complete nodes with extra information.
                     nodes[name].internalIp = existingNodes[name].private_ip[0]
                     nodes[name].externalIp = existingNodes[name].public_ip[0]
+        if waiting:
+            # Wait some more, machines usually needs a bit more time to get really ready.
+            time.sleep(wait)
