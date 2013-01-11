@@ -105,7 +105,9 @@ executed on the machine. Refer to the
 info.
 2. run meister provision:  
 
-    meister provision
+
+	meister provision
+
 
 3. Verify that all machines are running on the aws console.
 
