@@ -3,27 +3,35 @@
 # server which runs the puppet master.
 managementServer: mgmt
 
-# The repo of the puppet master.
-puppetRepo:
-    url: "git@github.com:WKLive/example-puppet-master"
-    branch: master
+# The key file is the private key to use when connecting to new hosts.
+keyFile: /path/to/keyfile
 
-# The driver to use.
+
+# Tasks can be executed on nodes. This could be for instance be installing puppet.
+# All methods in the task file are exposed. Fabric is available for executing tasks on the machine.
+taskModule: tasks
+
+# The default user is used when connecting to nodes through ssh.
+defaultUser: ubuntu
+
+# The default key to use.
+defaultKeyFile = /path/to/key
+
+# The driver creates servers.
 driver:
-    name: aws
-    id: your-id
-    key: your-key
-    region: your-region
-    defaultSecurityGroup: group
-    defaultZone: eu-west-1a
-    defaultKeyName: example
+    name: aws # Only aws is supported currently.
+    id: your-id # AWS id
+    key: your-key # AWS
+    region: your-region # The region, for instance eu-west-1
+    defaultSecurityGroup: group # The default security grups that nodes should belong to.
+    defaultZone: eu-west-1a # The default AWS Zone
+    defaultKeyName: example # Default key pair name. Create one in the AWS console first.
 
-# DNS Provider.
 DNS:
-    name: Provider
-    id: your-id
-    key: your-key
- 	defaultZone: example.com.
+    name: Provider # Name of your provider, for instance route53
+    id: your-id # Route 53 id
+    key: your-key # Route 53 key
+ 	defaultZone: example.com. # The zone to use by default. all nodes will register their domains here if you don't specify another zone.
 
 # Security groups with firewall rules.
 securityGroups:
@@ -33,16 +41,16 @@ securityGroups:
             - ip: 10.10.1.1/32
               fromPort: 8081
               toPort: 8082
-            - ip: 192.168.1.0/32
-              fromPort: 8081
-              toPort: 8082
+            - ip: 0.0.0.0/0
+              fromPort: 22
+              toPort: 22
 
     group2:
         description: Group2 description
         rules:
-            - ip: 10.10.1.1/32
-              fromPort: 8081
-              toPort: 8082
+            - ip: 0.0.0.0/0
+              fromPort: 22
+              toPort: 22
 
 # The nodes to create.
 nodes:
@@ -53,12 +61,18 @@ nodes:
         externalDNS: mgmt.example.com.
         internalDNS: mgmt.internal.example.com.
         image: ami-c1aaabb5
+        tasks:
+        	- install_puppet
+        	- install_puppet_master
     application1:
         hostname: application1
         size: t1.micro
         image: ami-c1aaabb5
         externalDNS: application1.example.com.
         internalDNS: application1.internal.example.com.
+        tasks:
+        	- install_puppet
+        	- register_node
     application2:
         hostname: application2
         size: t1.micro
@@ -66,4 +80,8 @@ nodes:
         internalDNS: application2.internal.example.com. # Binds to internal IP address
         image: ami-c1aaabb5
         securityGroup: group2
+        tasks:
+        	- install_puppet
+        	- register_node
+
 

@@ -21,10 +21,16 @@ class Deployer:
     def put(self, localPath, remotePath = None, useSudo = False):
         with settings(host_string=self.hoststring, key_filename=self.keyFile):
             put(localPath, remotePath, useSudo)
-    
-    def run(self, command):
+
+    def get(self, remotePath, localPath = None, useSudo = False):
         with settings(host_string=self.hoststring, key_filename=self.keyFile):
-            run(command)
+            file = get(remotePath, localPath)
+        return file
+
+    def run(self, command, warnOnly = False):
+        with settings(host_string=self.hoststring, key_filename=self.keyFile, warn_only=warnOnly):
+            result = run(command)
+        return result
         
     def sudo(self, command):
         with settings(host_string=self.hoststring, key_filename=self.keyFile):
