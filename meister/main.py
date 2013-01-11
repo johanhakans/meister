@@ -18,12 +18,10 @@ It defines classes_and_methods
 '''
 
 import sys
-import os
 import config
 
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
-from config import YamlConfig
 
 __all__ = []
 __version__ = 0.1
@@ -76,19 +74,21 @@ USAGE
     try:
         # Setup argument parser
         parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)
-        parser.add_argument('command', help="A command to execute", default="info")
-        parser.add_argument('-f', '--file', action='store', default="meister.py")
+        parser.add_argument('command', help="A command to execute", default="info", nargs="+")
+        parser.add_argument('-f', '--file', action='store', default="meister.yml")
 
         # Process arguments
         args = parser.parse_args()
         logger = PrintLogger()
-        command = args.command
+        command = args.command[0]
         file = args.file
         configuration = config.YamlConfig(file)
+
         commands = { 
             "provision": { "cmd": lambda: configuration.provision(logger), "help": "Provision the configuration using the drivers provided." },
             "terminate": { "cmd": lambda: configuration.terminate(logger), "help": "Terminate instances specified by the configuration file." },
-            "info": { "cmd": lambda: configuration.info(logger), "help": "Show information about the configuration and the current state." }
+            "info": { "cmd": lambda: configuration.info(logger), "help": "Show information about the configuration and the current state." },
+            "task": { "cmd": lambda: configuration.task(logger, args.command[1], args.command[2]), "help": "Execute a task on a node."}
         }
         if command in commands:
             commands[command]["cmd"]()
@@ -100,11 +100,6 @@ USAGE
     except KeyboardInterrupt:
         ### handle keyboard interrupt ###
         return 0
-    except Exception, e:
-        indent = len(program_name) * " "
-        sys.stderr.write(program_name + ": " + repr(e) + "\n")
-        sys.stderr.write(indent + "  for help use --help")
-        return 2
 
 if __name__ == "__main__":
     sys.exit(main())

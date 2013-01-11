@@ -62,8 +62,22 @@ class YamlConfig(Config):
                         if taskFn:
                             deployer.runTask(taskFn)
                             status["tasks"].append(task)
-                    self.putTaskStatus(status, deployer, logger)
-    
+                            self.putTaskStatus(status, deployer, logger)
+
+    def task(self, logger, nodeName, task):
+        nodes = self.getNodes()
+        if not nodeName in nodes:
+            logger.log("Node {0} does not exist.".format(nodeName), "error")
+            return
+        taskFn = getattr(self.tasksModule, task, None)
+        if not taskFn:
+            logger.log("Task {0} does not exist.".format(task), "error")
+            return;
+
+        node = nodes[nodeName]
+        deployer = Deployer(node.externalIp, username=node.user, keyFile=node.keyFile)
+        deployer.runTask(taskFn)
+
     def getTaskStatus(self, deployer, logger):
         if isfile("/tmp/meister-status"):
             os.remove("/tmp/meister-status")
