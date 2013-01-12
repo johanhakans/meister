@@ -9,6 +9,7 @@ import yaml
 from aws.driver import EC2Driver
 from aws.driver import Route53Driver
 from deploy import Deployer
+import time
 
 class Config:
     drivers = {
@@ -50,7 +51,19 @@ class YamlConfig(Config):
         # Run tasks
         if self.tasksModule:
             logger.log("Running tasks.")
-            for name, node in self.getNodes().items():
+
+            nodes = self.getNodes().items()
+            # Always take the management server first, if it is available.
+            # This is necessary since the other nodes could depend on the management server being in place.
+            if "managementServer" in self.data:
+                mgmt = self.data["managementServer"]
+                def sortNodes(item1, item2):
+                    if item1[0] == mgmt:
+                        return -1
+                    return 0
+                nodes = sorted(nodes, sortNodes)
+
+            for name, node in nodes:
                 if node.user:
                     logger.log("Running tasks for {0}".format(name))
                     deployer = Deployer(node.externalIp, username=node.user, keyFile=node.keyFile)
