@@ -1,4 +1,5 @@
 import unittest
+import time
 import secrets
 from meister.aws import ec2
 from libcloud.compute.types import Provider
@@ -21,8 +22,20 @@ class AWSConnectionTest(unittest.TestCase):
         # We should have a pending state.
         self.assertEqual(node.state, 3)
         self.assertTrue("testnode" in self.con.getNodes().keys())
+        # Wait for a bit, to get the node into running state.
+        while node.extra["status"] != "running":
+           time.sleep(4)
+           node = self.con.getNodes(True)["testnode"]
+        # Test associating an IP address to the node.
+        ip_address = self.con.allocateElasticIP()
+        self.con.associateIP(node, ip_address)
+        node = self.con.getNodes(True)["testnode"]
+        self.assertTrue(node.public_ip[0], ip_address)
+        self.con.deleteElasticIP(ip_address)
+        ips = self.con.getElasticIPs()
+        self.assertTrue(ip_address not in ips)
         node.destroy()
-        # Destroy the newly created node.
+
     
     def testSecurityGroup(self):
         group = self.con.createSecurityGroup("mygroup", "mydescription")
