@@ -19,8 +19,40 @@ class EC2Connection:
         self.conn = Driver(ec2_id, ec2_key)
         self.securityGroups = None
         self.nodes = None
-        
-        
+
+    def getElasticIPs(self, associated=True):
+        """
+        Get elastic IP addresses.
+        @param allocated: Return addresses that are associated with nodes.
+        """
+        return self.conn.ex_describe_all_addresses(associated)
+
+    def associateIP(self, node, ip_address):
+        """
+        Associate an IP address to a node.
+        """
+        return self.conn.ex_associate_addresses(node, ip_address)
+
+    def allocateElasticIP(self):
+        """
+        Allocate a new elastic IP address and return it.
+        """
+        params = {
+            "Action": "AllocateAddress",
+        }
+        response = self.conn.connection.request(self.conn.path, params=params).object
+        return findtext(element=response, xpath="publicIp", namespace=NAMESPACE)
+
+    def deleteElasticIP(self, ip_address):
+        """
+        Delete an elastic IP address.
+        """
+        params = {
+            "Action": "ReleaseAddress",
+            "PublicIp": ip_address
+        }
+        self.conn.connection.request(self.conn.path, params=params)
+
 
     def getNodes(self, reset = False):
         """
