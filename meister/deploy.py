@@ -19,7 +19,7 @@ class Deployer:
             self.hoststring = "{0}@{1}".format(username, self.hoststring)
 
     def put(self, localPath, remotePath = None, useSudo = False):
-        with settings(host_string=self.hoststring, key_filename=self.keyFile):
+        with settings(host_string=self.hoststring, key_filename=self.keyFile, host=self.hostname):
             put(localPath, remotePath, useSudo)
 
     def get(self, remotePath, localPath = None, useSudo = False):
@@ -28,14 +28,14 @@ class Deployer:
         return file
 
     def run(self, command, warnOnly = False):
-        with settings(host_string=self.hoststring, key_filename=self.keyFile, warn_only=warnOnly):
+        with settings(host_string=self.hoststring, key_filename=self.keyFile, warn_only=warnOnly, host=self.hostname):
             result = run(command)
         return result
         
     def sudo(self, command):
-        with settings(host_string=self.hoststring, key_filename=self.keyFile):
+        with settings(host_string=self.hoststring, key_filename=self.keyFile, host=self.hostname):
             sudo(command)
 
     def runTask(self, task):
-        with settings(host_string=self.hoststring, key_filename=self.keyFile):
+        with settings(host_string=self.hoststring, key_filename=self.keyFile, host=self.hostname):
             task()
