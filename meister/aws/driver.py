@@ -6,8 +6,9 @@ Created on Jan 10, 2013
 
 import ec2
 import route53
-
+from fabric.operations import prompt
 from provisioner import Provisioner
+from fabric.contrib.console import confirm
 from libcloud.compute.types import Provider
 
 class EC2Driver:
@@ -21,6 +22,46 @@ class EC2Driver:
         "sa-east-1": Provider.EC2_SA_EAST
     }
 
+    NodeProperties = [
+        ('image', "Image"),
+        ('securityGroup', "Security group"),
+        ('size', "Size"), 
+        ('diskSize', "Disk size"),
+        ('zone', "Zone"),
+        ("externalDNS", "External DNS"),
+        ("internalDNS", "Internal DNS"),
+        ("keyName", "Key name"),
+        ("elasticIP" "Elastic IP", bool)
+        ]
+
+    @staticmethod
+    def interactive(settings):
+        driverProps = [
+            ("id", "AWS ID"),
+            ("key", "AWS Key"),
+            ("region", "Region"),
+            ("defaultSecurityGroup", "Default security group"),
+            ("defaultZone", "Default zone"),
+            ("defaultKeyName", "Default Key name")
+            ]
+        for prop, title in driverProps:
+            settings["driver"][prop] = prompt("{0}:".format(title))
+
+        groups = {}
+        if (confirm("Do you want to create security groups?")):
+            group = {}
+            name = prompt("Group name:")
+            group["description"] = prompt("Description:")
+            group["rules"] = []
+            while (confirm("Do you want to create a rule?")):
+                rule = {}
+                rule["ip"] = prompt("IP [x.x.x.x/x]:")
+                rule["fromPort"] = prompt("From port:", validate=int)
+                rule["toPort"] = prompt("To port:", validate=int)
+                group["rules"].append(rule)
+            groups[name] = group
+        settings["securityGroups"] = groups
+        
     def __init__(self, config, settings):
         self.aws_id = settings['driver']['id']
         self.aws_key = settings['driver']['key']
@@ -84,6 +125,16 @@ class EC2Driver:
 
 
 class Route53Driver:
+    @staticmethod
+    def interactive(settings):
+        driverProps = [
+            ("id", "AWS ID"),
+            ("key", "AWS Key"),
+            ("defaultZone", "Default zone name"),
+            ]
+        for prop, title in driverProps:
+            settings["driver"][prop] = prompt("{0}:".format(title))
+
     def __init__(self, config, settings):
         self.aws_id = settings['DNS']['id']
         self.aws_key = settings['DNS']['key']

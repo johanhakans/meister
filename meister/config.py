@@ -6,20 +6,22 @@ import sys;
 from os.path import isfile, dirname, isdir
 import os
 import yaml
+from fabric.operations import prompt
+from fabric.contrib.console import confirm
 from aws.driver import EC2Driver
 from aws.driver import Route53Driver
 from deploy import Deployer
 import time
 
-class Config:
-    drivers = {
-        "aws": EC2Driver
-    }
+DRIVERS = {
+    "aws": EC2Driver
+}
     
-    DNSDrivers = {
-        "route53": Route53Driver
-    }
+DNSDrivers = {
+    "route53": Route53Driver
+}
 
+class Config:
     def getNodes(self):
         return self.nodes
 
@@ -123,8 +125,8 @@ class YamlConfig(Config):
 
     def parse(self):
         data = yaml.load(open(self.configFile).read())
-        self.driver = self.drivers[data['driver']['name']](self, data)
-        self.DNSDriver = self.DNSDrivers[data['DNS']['name']](self, data)
+        self.driver = DRIVERS[data['driver']['name']](self, data)
+        self.DNSDriver = DNSDrivers[data['DNS']['name']](self, data)
         self.nodes = {}
         self.data = data
         self.tasksModule = __import__(data["tasksModule"]) if "tasksModule" in data else None
@@ -140,3 +142,66 @@ class YamlConfig(Config):
                 else:
                     val = getattr(self, defaultProp, None)
                     setattr(self.nodes[name], prop, val)
+
+
+class YamlConfigWriter:
+    def listDrivers(self, drivers):
+        i = 1;
+        for name, driver in drivers.items():
+            print "{0}. {1}".format(i, name)
+            i += 1
+        return i
+
+    def interactive(self):
+        settings = { "driver": {}}
+        print "Available compute drivers:"
+        i = self.listDrivers(DRIVERS)
+        def validateDriver(response):
+            if int(response) - 1 > i:
+                raise Exception("Invalid driver number")
+            return int(response) - 1
+
+        driverId = prompt("Select driver:", validate=validateDriver)
+        print driverId
+        driver = DRIVERS.keys()[driverId]
+        settings["driver"]["name"] = driver
+        DriverClass = DRIVERS[driver]
+        if hasattr(DriverClass, "interactive"):
+            DriverClass.interactive(settings)
+        nodes = {}
+        useDNS = confirm("Do you want to use DNS?")
+        if useDNS:
+            settings["DNS"] = {}
+            i = self.listDrivers(DNSDrivers)
+            driverId = prompt("Select driver:", validate=validateDriver)
+            settings["DNS"]["name"] = DNSDrivers.keys()[driverId]
+            DNSDrivers[settings["DNS"]["name"]].interactive(settings)
+        
+        def promptNode():
+            name, node = self.createNode(DriverClass, useDNS)
+            nodes[name] = node
+            if prompt("Do you want to create another node?"):
+                promptNode()
+
+        if confirm("Do you want to define nodes?"):
+            promptNode()
+        
+
+    def createNode(self, Driver, useDNS = False):
+        node = {}
+        props = [
+            ("hostname", "Host name"),
+            ] + Driver.NodeProperties
+        name = prompt("Name:")
+        if useDNS:
+            props.append(("externalDNS", "External DNS"))
+            props.append(("internalDNS", "internal DNS"))
+
+        for prop, title in props:
+            node[prop] = prompt(title + ":")
+
+        return (name, node)
+            
+        
+
+

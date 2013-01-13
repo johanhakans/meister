@@ -3,7 +3,7 @@
 
 import sys
 import config
-
+from os.path import isfile
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 
@@ -34,13 +34,15 @@ def main(argv=None): # IGNORE:C0111
         logger = PrintLogger()
         command = args.command[0]
         file = args.file
-        configuration = config.YamlConfig(file)
+        if isfile(file):
+            configuration = config.YamlConfig(file)
 
         commands = { 
             "provision": { "cmd": lambda: configuration.provision(logger), "help": "Provision the configuration using the drivers provided." },
             "terminate": { "cmd": lambda: configuration.terminate(logger), "help": "Terminate instances specified by the configuration file." },
             "info": { "cmd": lambda: configuration.info(logger), "help": "Show information about the configuration and the current state." },
-            "task": { "cmd": lambda: configuration.task(logger, args.command[1], args.command[2]), "help": "Execute a task on a node."}
+            "task": { "cmd": lambda: configuration.task(logger, args.command[1], args.command[2]), "help": "Execute a task on a node."},
+            "init": { "cmd": lambda: config.YamlConfigWriter().interactive(), "help": "Initialize a new configuration file."}
         }
         if command in commands:
             commands[command]["cmd"]()
@@ -52,3 +54,5 @@ def main(argv=None): # IGNORE:C0111
     except KeyboardInterrupt:
         ### handle keyboard interrupt ###
         return 0
+if __name__ == "__main__":
+    sys.exit(main())
