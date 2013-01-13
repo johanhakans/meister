@@ -115,3 +115,12 @@ info.
 
 3. Verify that all machines are running on the aws console.
 
+
+# TODO
+There are several things that still needs to be done:
+
+1. Proper error handling
+2. Nice looking CLI
+3. Commands for initializing and modifiyng the meister.yml file
+4. Be able to remove unused nodes after removing them from the meister.yml file
+5. Code refactoring to fit PEP 8 standards
