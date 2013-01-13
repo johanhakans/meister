@@ -29,11 +29,12 @@ class Provisioner:
     def provisionNodes(self, nodes):
         # Find existing nodes.
         existingNodes = self.connection.getNodes()
+        elasticIps = self.connection.getElasticIPs(False)
         for name, node in nodes.items():
             # Create non-existing nodes.
             if not name in existingNodes:
                 self.logger.log("Creating node {0}".format(name))
-                self.connection.createNode(node.image, node.size, name, node.diskSize, node.securityGroup, node.zone, node.keyName)
+                createdNode = self.connection.createNode(node.image, node.size, name, node.diskSize, node.securityGroup, node.zone, node.keyName)
             else:
                 self.logger.log("Node {0} already exists.".format(name))
 
@@ -59,6 +60,7 @@ class Provisioner:
         Verify changes by waiting until the servers are done 
         """
         existingNodes = self.connection.getNodes(True)
+
         for name in nodes.keys():
             if name in existingNodes:
                 if existingNodes[name].extra['status'] != "running":
@@ -67,9 +69,22 @@ class Provisioner:
                     return self.verify(nodes, wait, True)
                 else:
                     self.logger.log("Node {0} is running".format(name))
-                    # Complete nodes with extra information.
+                    # Associate elastic IP addresses.
+                    elasticIps = self.connection.getElasticIPs()
+                    if nodes[name].elasticIP and existingNodes[name].public_ip[0] not in elasticIps:
+                        self.logger.log("Creating elastic IP")
+                        if len(elasticIps):
+                            elasticIp = elasticIps.pop()
+                        else:
+                            elasticIp = self.connection.allocateElasticIP()
+                        self.connection.associateIP(existingNodes[name], elasticIp)
+                        nodes[name].externalIp = elasticIp
+                    else:
+                        nodes[name].externalIp = existingNodes[name].public_ip[0]
+
                     nodes[name].internalIp = existingNodes[name].private_ip[0]
-                    nodes[name].externalIp = existingNodes[name].public_ip[0]
+                    
+
         if waiting:
             # Wait some more, machines usually needs a bit more time to get really ready.
             time.sleep(wait)

@@ -126,11 +126,12 @@ class Route53Driver:
 class AWSNode():
     def __init__(self, name, definition):
         defaults = {
-            "diskSize": "8"
+            "diskSize": "8",
+            "elasticIP": False
         }
         self.name = name
         self.hostname = definition['hostname']
-        for prop in ['image', 'securityGroup', 'size', 'diskSize', 'zone', "externalDNS", "internalDNS", "internalIp", "externalIp", "keyName"]:
+        for prop in ['image', 'securityGroup', 'size', 'diskSize', 'zone', "externalDNS", "internalDNS", "internalIp", "externalIp", "keyName", "elasticIP"]:
             if prop in definition:
                 setattr(self, prop, definition[prop])
             elif prop in defaults:
