@@ -1,0 +1,167 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Meister by WKLive</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Meister</h1>
+        <p>Keep track of complex cloud setups!</p>
+
+        <p class="view"><a href="https://github.com/WKLive/meister">View the Project on GitHub <small>WKLive/meister</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/WKLive/meister/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/WKLive/meister/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/WKLive/meister">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>Meister</h1>
+
+<p>Meister is a CLI tool that aims to ease setting up a complex system of
+servers on a cloud hosting provider.  It works by creating a yaml
+configuration file that contains all configuration that you want to
+provision to a cloud hosting provider. That file can then be version
+controlled so that changes in the server stack are easily overviewed.</p>
+
+<h1>Installation</h1>
+
+<pre><code>(sudo) python setup.py install
+</code></pre>
+
+<h1>The meister.yml file</h1>
+
+<pre><code>---
+# The management server is the main server.
+# A history of the meister.yml is stored here so that changes can be executed.
+managementServer: mgmt
+
+# The key file is the private key to use when connecting to new hosts.
+keyFile: /path/to/keyfile
+
+# Tasks can be executed on nodes. This could be for instance be installing puppet.
+# All methods in the task file are exposed. Fabric is available for executing tasks on the machine.
+taskModule: tasks
+
+# The default user is used when connecting to nodes through ssh.
+# This can be overriden on node level by specifying the user property.
+defaultUser: ubuntu
+
+# The default key to use.
+defaultKeyFile = /path/to/key
+
+# The driver is used to create servers on the cloud hosting provider.
+driver:
+    name: aws # Only aws is supported currently.
+    id: your-id # AWS id
+    key: your-key # AWS
+   region: your-region # The region, for instance eu-west-1
+   defaultSecurityGroup: group # The default security grups that nodes should belong to. This can be overriden by specifiying the securityGroup property.
+   defaultZone: eu-west-1a # The default AWS Zone.
+   defaultKeyName: example # Default key pair name. Create this keypair in the aws console first!
+
+DNS:
+  name: Provider # Name of your provider, for instance route53
+  id: your-id # Route 53 id
+  key: your-key # Route 53 key
+  defaultZone: example.com. # The zone to use by default. All nodes will register their domains here if you don't specify another zone in the node definition.
+
+# Security groups with firewall rules.
+securityGroups:
+  group:
+    description: Group1 description
+    rules:
+        - ip: 10.10.1.1/32
+          fromPort: 8081
+          toPort: 8082
+        - ip: 0.0.0.0/0
+          fromPort: 22
+          toPort: 22
+
+    group2:
+        description: Group2 description
+        rules:
+            - ip: 0.0.0.0/0
+              fromPort: 22
+              toPort: 22
+
+# The nodes to create.
+nodes:
+    mgmt:
+        hostname: mgmt
+        size: t1.micro
+        diskSize: 20 # Size in GB. Defaults to 8gb
+        externalDNS: mgmt.example.com.
+        internalDNS: mgmt.internal.example.com.
+        image: ami-c1aaabb5
+        tasks: # Tasks are run when the node is first set up.
+          - install_puppet
+          - install_puppet_master
+    application1:
+        hostname: application1
+        size: t1.micro
+        image: ami-c1aaabb5
+        externalDNS: application1.example.com.
+        internalDNS: application1.internal.example.com.
+        tasks:
+            - install_puppet
+            - register_node
+     application2:
+         hostname: application2
+         size: t1.micro
+         externalDNS: application2.example.com. # Binds to external IP address
+         internalDNS: application2.internal.example.com. # Binds to internal IP address
+         image: ami-c1aaabb5
+         securityGroup: group2
+         tasks:
+             - install_puppet
+             - register_node
+</code></pre>
+
+<h1>Usage</h1>
+
+<ol>
+<li>Create a meister.yml file.</li>
+<li>Optionally create a python module with tasks that should be
+executed on the machine. Refer to the
+<a href="http://docs.fabfile.org/en/1.5/">Fabric documentation</a> for more
+info.</li>
+<li>
+<p>run meister provision:  </p>
+
+<p>meister provision</p>
+</li>
+<li><p>Verify that all machines are running on the aws console.</p></li>
+</ol><h1>TODO</h1>
+
+<p>There are several things that still needs to be done:</p>
+
+<ol>
+<li>Proper error handling</li>
+<li>Nice looking CLI</li>
+<li>Commands for initializing and modifiyng the meister.yml file</li>
+<li>Be able to remove unused nodes after removing them from the meister.yml file</li>
+<li>Code refactoring to fit PEP 8 standards</li>
+</ol>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/WKLive">WKLive</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
