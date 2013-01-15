@@ -72,6 +72,7 @@ class EC2Driver:
         provisioner.provisionSecurityGroups(self.getSecurityGroups())
         provisioner.provisionNodes(self.config.getNodes())
         provisioner.verify(self.config.getNodes())
+        provisioner.createElasticIps(self.config.getNodes())
         
     def terminate(self, logger):
         """
@@ -119,6 +120,14 @@ class Route53Driver:
     def terminate(self, nodes, logger):
         con = self.getConnection()
         zones = con.getZones()
+        if self.defaultZone:
+            defaultZone = con.getZone(zones[self.defaultZone].id)
+            for name, node in nodes.items():
+                if node.externalDNS and defaultZone.getRecord(node.externalDNS):
+                    defaultZone.deleteRecord(node.externalDNS)
+                if node.internalDNS and defaultZone.getRecord(node.internalDNS):
+                    defaultZone.deleteRecord(node.internalDNS)
+            con.saveZone(defaultZone)
 
 class AWSNode():
     def __init__(self, name, definition):
