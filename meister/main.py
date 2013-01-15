@@ -52,3 +52,6 @@ def main(argv=None): # IGNORE:C0111
     except KeyboardInterrupt:
         ### handle keyboard interrupt ###
         return 0
+
+if __name__ == "__main__":
+    main()
