@@ -1,10 +1,12 @@
 # Meister
 
 Meister is a CLI tool that aims to ease setting up a complex system of
-servers on a cloud hosting provider.  It works by creating a yaml
-configuration file that contains all configuration that you want to
-provision to a cloud hosting provider. That file can then be version
-controlled so that changes in the server stack are easily overviewed.
+servers on a cloud hosting provider.  It works by creating a
+[yaml](http://www.yaml.org/) file that contains all configuration that
+you want to provision to a cloud hosting provider. That file can then
+be version controlled so that changes in the server stack are easily
+overviewed. When you're done with the file, just run **meister
+provision** and the setup becomes a reality.
 
 # Installation
     
@@ -115,3 +117,12 @@ info.
 
 3. Verify that all machines are running on the aws console.
 
+
+# TODO
+There are several things that still needs to be done:
+
+1. Proper error handling
+2. Nice looking CLI
+3. Commands for initializing and modifiyng the meister.yml file
+4. Be able to remove unused nodes after removing them from the meister.yml file
+5. Code refactoring to fit PEP 8 standards
