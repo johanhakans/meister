@@ -48,6 +48,26 @@ class Provisioner:
                 self.logger.log("Deleting node {0}".format(name))
                 existingNodes[name].destroy()
     
+    def createElasticIps(self, nodes):
+        # Associate elastic IP addresses.
+        existingNodes = self.connection.getNodes(True)
+        elasticIps = self.connection.getElasticIPs(False)
+        for name, node in nodes.items():
+            if nodes[name].elasticIP and existingNodes[name].public_ip[0] not in elasticIps:
+                self.logger.log("Creating elastic IP for {0}".format(name))
+                if len(elasticIps):
+                    elasticIp = elasticIps.pop()
+                else:
+                    self.logger.log("Allocating new IP address")
+                    elasticIp = self.connection.allocateElasticIP()
+                
+                self.logger.log("Using IP {0}".format(elasticIp))
+                self.connection.associateIP(existingNodes[name], elasticIp)
+                nodes[name].externalIp = elasticIp
+                while existingNodes[name].public_ip[0] != elasticIp:
+                    existingNodes = self.connection.getNodes(True)
+                    time.sleep(2)
+
     def deleteSecurityGroups(self, groups):
         existingGroups = self.connection.getSecurityGroups()
         for name in groups.keys():
@@ -63,28 +83,14 @@ class Provisioner:
 
         for name in nodes.keys():
             if name in existingNodes:
-                if existingNodes[name].extra['status'] != "running":
+                if existingNodes[name].extra['status'] != "running" or not len(existingNodes[name].public_ips):
                     self.logger.log("Node {0} is not ready. Waiting for {1} seconds.".format(name, wait))
                     time.sleep(wait)
                     return self.verify(nodes, wait, True)
                 else:
                     self.logger.log("Node {0} is running".format(name))
-                    # Associate elastic IP addresses.
-                    elasticIps = self.connection.getElasticIPs()
-                    if nodes[name].elasticIP and existingNodes[name].public_ip[0] not in elasticIps:
-                        self.logger.log("Creating elastic IP")
-                        if len(elasticIps):
-                            elasticIp = elasticIps.pop()
-                        else:
-                            elasticIp = self.connection.allocateElasticIP()
-                        self.connection.associateIP(existingNodes[name], elasticIp)
-                        nodes[name].externalIp = elasticIp
-                    else:
-                        nodes[name].externalIp = existingNodes[name].public_ip[0]
-
+                    nodes[name].externalIp = existingNodes[name].public_ip[0]
                     nodes[name].internalIp = existingNodes[name].private_ip[0]
-                    
-
         if waiting:
             # Wait some more, machines usually needs a bit more time to get really ready.
             time.sleep(wait)
