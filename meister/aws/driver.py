@@ -119,9 +119,6 @@ class Route53Driver:
     def terminate(self, nodes, logger):
         con = self.getConnection()
         zones = con.getZones()
-        if self.defaultZone in zones:
-            logger.log("Deleting zone {0}".format(self.defaultZone))
-            con.deleteZone(zones[self.defaultZone])
 
 class AWSNode():
     def __init__(self, name, definition):
