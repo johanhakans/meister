@@ -36,6 +36,6 @@ class Deployer:
         with settings(host_string=self.hoststring, key_filename=self.keyFile, host=self.hostname):
             sudo(command)
 
-    def runTask(self, task):
+    def runTask(self, task, args = []):
         with settings(host_string=self.hoststring, key_filename=self.keyFile, host=self.hostname):
-            task()
+            task(*args)

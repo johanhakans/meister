@@ -71,9 +71,15 @@ class YamlConfig(Config):
                     # Filter out tasks that has already been run.
                     tasks = filter(lambda task: task not in status["tasks"], node.tasks)
                     for task in tasks:
-                        taskFn = getattr(self.tasksModule, task, None)
+                        if isinstance(task, dict):
+                            taskFnName = task["name"]
+                            args = task["arguments"]
+                        else:
+                            taskFnName = task
+                            args = []
+                        taskFn = getattr(self.tasksModule, taskFnName, None)
                         if taskFn:
-                            deployer.runTask(taskFn)
+                            deployer.runTask(taskFn, args)
                             status["tasks"].append(task)
                             self.putTaskStatus(status, deployer, logger)
 
