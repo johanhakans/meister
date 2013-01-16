@@ -7,6 +7,7 @@ from libcloud.compute.providers import get_driver
 from libcloud.utils.xml import fixxpath, findtext, findattr, findall
 from libcloud.compute.drivers.ec2 import NAMESPACE
 from libcloud.compute.deployment import ScriptDeployment
+from libcloud.compute.drivers import ec2
 
 class EC2Connection:
     """
@@ -42,6 +43,32 @@ class EC2Connection:
         }
         response = self.conn.connection.request(self.conn.path, params=params).object
         return findtext(element=response, xpath="publicIp", namespace=NAMESPACE)
+
+    def checkNodeStatus(self, node):
+        """
+        Check the status of a node.
+        """
+        # We need to use a higher version of the api for this.
+        # This is a very ugly way to upgrade it, just for this method.
+        old_version = ec2.API_VERSION
+        ec2.API_VERSION = "2012-12-01"
+        params = {
+            "Action": "DescribeInstanceStatus",
+            "InstanceId.0": node.id
+        }
+        response = self.conn.connection.request(self.conn.path, params=params).object
+        def getTag(tag):
+            return "{http://ec2.amazonaws.com/doc/2012-12-01/}" + tag
+
+        systemStatus = response.find("./{0}/{1}/{2}/{3}".format(getTag("instanceStatusSet"), getTag("item"), getTag("systemStatus"), getTag("status"))).text
+
+        instanceStatus = response.find("./{0}/{1}/{2}/{3}".format(getTag("instanceStatusSet"), getTag("item"), getTag("instanceStatus"), getTag("status"))).text
+        ec2.API_VERSION = old_version
+        return {
+            "systemStatus": systemStatus,
+            "instanceStatus": instanceStatus,
+            }
+    
 
     def deleteElasticIP(self, ip_address):
         """

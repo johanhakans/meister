@@ -34,8 +34,10 @@ class AWSConnectionTest(unittest.TestCase):
         self.con.deleteElasticIP(ip_address)
         ips = self.con.getElasticIPs()
         self.assertTrue(ip_address not in ips)
+        status = self.con.checkNodeStatus(node);
+        self.assertEqual(status['systemStatus'], "initializing")
+        self.assertEqual(status['instanceStatus'], "initializing")
         node.destroy()
-
     
     def testSecurityGroup(self):
         group = self.con.createSecurityGroup("mygroup", "mydescription")
@@ -44,5 +46,3 @@ class AWSConnectionTest(unittest.TestCase):
         self.assertTrue("mygroup" in self.con.getSecurityGroups())
         self.con.deleteSecurityGroup("mygroup")
         self.assertTrue("mygroup" not in self.con.getSecurityGroups())
-
-        
