@@ -54,7 +54,7 @@ class Provisioner:
         elasticIps = self.connection.getElasticIPs(False)
         for name, node in nodes.items():
             if nodes[name].elasticIP and existingNodes[name].public_ip[0] not in elasticIps:
-                self.logger.log("Creating elastic IP for {0}".format(name))
+                self.logger.log("Setting up elastic IP for {0}".format(name))
                 if len(elasticIps):
                     elasticIp = elasticIps.pop()
                 else:
@@ -63,10 +63,10 @@ class Provisioner:
                 
                 self.logger.log("Using IP {0}".format(elasticIp))
                 self.connection.associateIP(existingNodes[name], elasticIp)
-                nodes[name].externalIp = elasticIp
                 while existingNodes[name].public_ip[0] != elasticIp:
                     existingNodes = self.connection.getNodes(True)
                     time.sleep(2)
+                node.externalIp = elasticIp
 
     def deleteSecurityGroups(self, groups):
         existingGroups = self.connection.getSecurityGroups()
