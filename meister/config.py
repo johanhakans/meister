@@ -66,7 +66,7 @@ class YamlConfig(Config):
             for name, node in nodes:
                 if node.user:
                     logger.log("Running tasks for {0}".format(name))
-                    deployer = Deployer(node.externalDNS, username=node.user, keyFile=node.keyFile)
+                    deployer = Deployer(node.externalIp, username=node.user, keyFile=node.keyFile)
                     status = self.getTaskStatus(deployer, logger)
                     # Filter out tasks that has already been run.
                     tasks = filter(lambda task: task not in status["tasks"], node.tasks)
@@ -88,7 +88,7 @@ class YamlConfig(Config):
             return;
 
         node = nodes[nodeName]
-        deployer = Deployer(node.externalDNS, username=node.user, keyFile=node.keyFile)
+        deployer = Deployer(node.externalIp, username=node.user, keyFile=node.keyFile)
         deployer.runTask(taskFn)
 
     def getTaskStatus(self, deployer, logger):
