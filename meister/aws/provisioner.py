@@ -75,22 +75,26 @@ class Provisioner:
                 self.logger.log("Deleting security group {0}".format(name))
                 self.connection.deleteSecurityGroup(name)
 
-    def verify(self, nodes, wait=10, waiting = False):
+    def verify(self, nodes, wait=10):
         """
         Verify changes by waiting until the servers are done 
         """
         existingNodes = self.connection.getNodes(True)
-
         for name in nodes.keys():
             if name in existingNodes:
-                if existingNodes[name].extra['status'] != "running" or not len(existingNodes[name].public_ips):
-                    self.logger.log("Node {0} is not ready. Waiting for {1} seconds.".format(name, wait))
-                    time.sleep(wait)
-                    return self.verify(nodes, wait, True)
+                if existingNodes[name].extra["status"] == "running":
+                    status = self.connection.checkNodeStatus(existingNodes[name])
+                    if status['systemStatus'] == "ok" and status['instanceStatus'] == "ok":
+                        self.logger.log("Node {0} is running".format(name))
+                        nodes[name].externalIp = existingNodes[name].public_ip[0]
+                        nodes[name].internalIp = existingNodes[name].private_ip[0]
+                    elif status['systemStatus'] == 'initializing' or status['instanceStatus'] == 'initializing':
+                        self.logger.log("Node {0} is being set up. Waiting for {1} seconds.".format(name, wait))
+                        time.sleep(wait)
+                        return self.verify(nodes, wait)
+                    else:
+                        raise Exception("AWS could not set up instance {0}".format(name))
                 else:
-                    self.logger.log("Node {0} is running".format(name))
-                    nodes[name].externalIp = existingNodes[name].public_ip[0]
-                    nodes[name].internalIp = existingNodes[name].private_ip[0]
-        if waiting:
-            # Wait some more, machines usually needs a bit more time to get really ready.
-            time.sleep(wait)
+                    self.logger.log("Node {0} is starting. Waiting for {1} seconds.".format(name, wait))
+                    time.sleep(wait)
+                    return self.verify(nodes, wait)
