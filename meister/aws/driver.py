@@ -80,7 +80,6 @@ class EC2Driver:
         """
         provisioner = Provisioner(self.getConnection(), logger)
         provisioner.deleteNodes(self.config.getNodes())
-        provisioner.verify(self.config.getNodes())
         provisioner.deleteSecurityGroups(self.getSecurityGroups())
 
 
