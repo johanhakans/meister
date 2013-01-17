@@ -47,6 +47,14 @@ class Provisioner:
             if name in existingNodes:
                 self.logger.log("Deleting node {0}".format(name))
                 existingNodes[name].destroy()
+        self.logger.log("Waiting for nodes to die...")
+        def waitForNodes():
+            existingNodes = self.connection.getNodes(True)
+            for name in nodes.keys():
+                if name in existingNodes:
+                    return waitForNodes()
+        waitForNodes()
+
     
     def createElasticIps(self, nodes):
         # Associate elastic IP addresses.
