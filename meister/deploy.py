@@ -3,39 +3,47 @@ Created on Jan 11, 2013
 
 @author: fabsor
 '''
+from time import sleep
 from fabric.api import settings, abort, run, cd, sudo, put, env, prompt, get
+from fabric.contrib.files import exists
 
 class Deployer:
     
-    def __init__(self, hostname, port = None, username = None, keyFile = None):
+    def __init__(self, hostname, port = None, username = None, keyFile = None, retries = 2):
         self.hostname = hostname
         self.port = port
         self.username = username
         self.keyFile = keyFile
         self.hoststring = hostname
+        self.retries = 2
         if port:
             self.hoststring = "{0}:{1}".format(self.hoststring, port)
         if username:
             self.hoststring = "{0}@{1}".format(username, self.hoststring)
 
     def put(self, localPath, remotePath = None, useSudo = False):
-        with settings(host_string=self.hoststring, key_filename=self.keyFile, host=self.hostname):
-            put(localPath, remotePath, useSudo)
+        return self.runTask(put, [localPath, remotePath, useSudo])
 
     def get(self, remotePath, localPath = None, useSudo = False):
-        with settings(host_string=self.hoststring, key_filename=self.keyFile):
-            file = get(remotePath, localPath)
-        return file
+        return self.runTask(get, [remotePath, localPath])
 
-    def run(self, command, warnOnly = False):
-        with settings(host_string=self.hoststring, key_filename=self.keyFile, warn_only=warnOnly, host=self.hostname):
-            result = run(command)
-        return result
+    def fileExists(self, path):
+        return self.runTask(exists, [path])
+
+    def run(self, command):
+        return self.runTask(run, { "command": command })
         
     def sudo(self, command):
-        with settings(host_string=self.hoststring, key_filename=self.keyFile, host=self.hostname):
-            sudo(command)
+        return self.runTask(sudo, [command])
 
-    def runTask(self, task, args = []):
+    def runTask(self, task, args = [], tries = 0):
         with settings(host_string=self.hoststring, key_filename=self.keyFile, host=self.hostname):
-            task(*args)
+            try:
+                return task(**args) if isinstance(args, dict) else task(*args)
+            except Exception as e:
+                print e
+                if tries < self.retries:
+                    sleep(5)
+                    return self.runTask(task, args, tries + 1)
+                else:
+                    raise e
