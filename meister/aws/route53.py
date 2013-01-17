@@ -81,7 +81,8 @@ class Route53Connection:
             A comment about this zone.
         """
         conn = self.getConnection()
-        changes = []
+        addChanges = []
+        deleteChanges = []
         if not zone.id:
             identifier = "request-create-{0}-{1}".format(zone.name, self.date)
             request = '''<?xml version="1.0" encoding="UTF-8"?>
@@ -104,7 +105,12 @@ class Route53Connection:
                     record["action"] = "DELETE"
                     record["saved"] = False
                     records.append(record)
-                    
+                # Add record for deletion if we updated.
+                if name in zone.records and not zone.records[name]["saved"]:
+                    record["action"] = "DELETE"
+                    record["saved"] = False
+                    records.append(record)
+
         for record in records:
             if not record["saved"] and (record["type"] == "A" or record["type"] == "CNAME"):
                 action = record["action"] if "action" in record.keys() else "CREATE"
@@ -125,23 +131,24 @@ class Route53Connection:
                         </ResourceRecordSet>
                     </Change>
                 """.format(action, record["name"], record["type"], record["ttl"], resourceRecords)
-                changes.append(change)
-        if len(changes):
+                deleteChanges.append(change) if action == "DELETE" else addChanges.append(change)
+        changes = deleteChanges + addChanges
+        if changes:
             request = """<?xml version="1.0" encoding="UTF-8"?>
-                    <ChangeResourceRecordSetsRequest xmlns="https://route53.amazonaws.com/doc/2012-02-29/">
-                        <ChangeBatch>
-                            <Changes>
-                                {0}
-                            </Changes>
-                        </ChangeBatch>
-                  </ChangeResourceRecordSetsRequest>
-            """.format(''.join(changes))
+                <ChangeResourceRecordSetsRequest xmlns="https://route53.amazonaws.com/doc/2012-02-29/">
+                <ChangeBatch>
+                  <Changes>
+                    {0}
+                  </Changes>
+                </ChangeBatch>
+                </ChangeResourceRecordSetsRequest>
+                """.format(''.join(changes))
+            print request
             self.request("POST", zone.id + "/rrset", request, conn=conn)
             for name, record in zone.records.items():
                 record["saved"] = True
                 if "action" in record:
                     del record["action"]
-
         conn.close()
         return zone
     
@@ -257,9 +264,9 @@ class Zone:
         }
         self.records[name] = record
         return record
+
     def updateRecord(self, name, record):
         record["saved"] = False
-        record["action"] = "UPDATE"
         self.records[name] = record
 
     def deleteRecord(self, name):
