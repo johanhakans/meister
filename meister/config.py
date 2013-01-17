@@ -100,8 +100,7 @@ class YamlConfig(Config):
     def getTaskStatus(self, deployer, logger):
         if isfile("/tmp/meister-status"):
             os.remove("/tmp/meister-status")
-        exists = deployer.run("test -f ~/.meister", True)
-        if not exists.return_code:
+        if deployer.fileExists("~/.meister"):
             file = deployer.get("~/.meister", "/tmp/meister-status")[0]
         else:
             return { "tasks": [] }
