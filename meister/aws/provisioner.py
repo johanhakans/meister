@@ -89,22 +89,34 @@ class Provisioner:
         Verify changes by waiting until the servers are done 
         """
         existingNodes = self.connection.getNodes(True)
-        for name in nodes.keys():
-            if name in existingNodes:
-                if existingNodes[name].extra["status"] == "running":
-                    status = self.connection.checkNodeStatus(existingNodes[name])
-                    if status['systemStatus'] == "ok" and status['instanceStatus'] == "ok":
-                        self.logger.log("Node {0} is running".format(name))
-                        if existingNodes[name].public_ip:
-                            nodes[name].externalIp = existingNodes[name].public_ip[0]
-                        nodes[name].internalIp = existingNodes[name].private_ip[0]
-                    elif status['systemStatus'] == 'initializing' or status['instanceStatus'] == 'initializing':
-                        self.logger.log("Node {0} is being set up. Waiting for {1} seconds.".format(name, wait))
-                        time.sleep(wait)
-                        return self.verify(nodes, wait)
-                    else:
-                        raise Exception("AWS could not set up instance {0}".format(name))
-                else:
-                    self.logger.log("Node {0} is starting. Waiting for {1} seconds.".format(name, wait))
+        for name, node in nodes.items():
+            self.verifyNode(name, node, wait)
+
+    def verifyNode(self, name, node, wait, step = None):
+        existingNodes = self.connection.getNodes(True)
+        if name in existingNodes:
+            existingNode = existingNodes[name]
+            if existingNode.extra["status"] == "running":
+                status = self.connection.checkNodeStatus(existingNode)
+                # We are good to go. Next please.
+                if status['systemStatus'] == "ok" and status['instanceStatus'] == "ok":
+                    if existingNode.public_ip:
+                        node.externalIp = existingNode.public_ip[0]
+                        node.internalIp = existingNode.private_ip[0]
+                # The machine is booting up.
+                elif status['systemStatus'] == 'initializing' or status['instanceStatus'] == 'initializing':
+                    if step != "initializing":
+                        self.logger.log("Waiting for node {0} to be set up".format(name))
+                        step = "initializing"
                     time.sleep(wait)
-                    return self.verify(nodes, wait)
+                    return self.verifyNode(name, node, wait, step)
+                # Something went horribly wrong, we can't recover from this.
+                else:
+                    raise Exception("AWS could not set up instance {0}".format(name))
+            # The machine is being created in EC2.
+            else:
+                if step != "creating":
+                    self.logger.log("Waiting for node {0} to be started in EC2".format(name, wait))
+                    step = "creating"
+                time.sleep(wait)
+                return self.verifyNode(name, node, wait, step)
