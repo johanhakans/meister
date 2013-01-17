@@ -53,9 +53,10 @@ class Provisioner:
         existingNodes = self.connection.getNodes(True)
         elasticIps = self.connection.getElasticIPs(False)
         for name, node in nodes.items():
-            if nodes[name].elasticIP and existingNodes[name].public_ip[0] not in elasticIps:
+            if nodes[name].elasticIP and (not existingNodes[name].public_ip or existingNodes[name].public_ip[0] not in elasticIps):
                 self.logger.log("Setting up elastic IP for {0}".format(name))
                 if len(elasticIps):
+                    print "using existing ip"
                     elasticIp = elasticIps.pop()
                 else:
                     self.logger.log("Allocating new IP address")
@@ -86,7 +87,8 @@ class Provisioner:
                     status = self.connection.checkNodeStatus(existingNodes[name])
                     if status['systemStatus'] == "ok" and status['instanceStatus'] == "ok":
                         self.logger.log("Node {0} is running".format(name))
-                        nodes[name].externalIp = existingNodes[name].public_ip[0]
+                        if existingNodes[name].public_ip:
+                            nodes[name].externalIp = existingNodes[name].public_ip[0]
                         nodes[name].internalIp = existingNodes[name].private_ip[0]
                     elif status['systemStatus'] == 'initializing' or status['instanceStatus'] == 'initializing':
                         self.logger.log("Node {0} is being set up. Waiting for {1} seconds.".format(name, wait))
