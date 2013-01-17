@@ -143,7 +143,6 @@ class Route53Connection:
                 </ChangeBatch>
                 </ChangeResourceRecordSetsRequest>
                 """.format(''.join(changes))
-            print request
             self.request("POST", zone.id + "/rrset", request, conn=conn)
             for name, record in zone.records.items():
                 record["saved"] = True
