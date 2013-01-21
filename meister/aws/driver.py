@@ -135,7 +135,6 @@ class AWSNode():
             "elasticIP": False
         }
         self.name = name
-        self.hostname = definition['hostname']
         for prop in ['image', 'securityGroup', 'size', 'diskSize', 'zone', "externalDNS", "internalDNS", "internalIp", "externalIp", "keyName", "elasticIP"]:
             if prop in definition:
                 setattr(self, prop, definition[prop])
