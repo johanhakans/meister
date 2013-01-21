@@ -67,7 +67,8 @@ class YamlConfig(Config):
                 if node.user:
                     logger.log("Running tasks for {0}".format(name))
                     deployer = Deployer(node.externalIp, username=node.user, keyFile=node.keyFile)
-                    status = self.getTaskStatus(deployer, logger)
+                    meisterFile = "/home/{0}/.meister".format(node.user)
+                    status = self.getTaskStatus(deployer, logger, meisterFile)
                     # Filter out tasks that has already been run.
                     tasks = filter(lambda task: task not in status["tasks"], node.tasks)
                     for task in tasks:
@@ -81,7 +82,7 @@ class YamlConfig(Config):
                         if taskFn:
                             deployer.runTask(taskFn, args)
                             status["tasks"].append(task)
-                            self.putTaskStatus(status, deployer, logger)
+                            self.putTaskStatus(status, deployer, logger, meisterFile)
 
     def task(self, logger, nodeName, task):
         nodes = self.getNodes()
@@ -97,21 +98,21 @@ class YamlConfig(Config):
         deployer = Deployer(node.externalIp, username=node.user, keyFile=node.keyFile)
         deployer.runTask(taskFn)
 
-    def getTaskStatus(self, deployer, logger):
+    def getTaskStatus(self, deployer, logger, meisterFile = "~/.meister"):
         if isfile("/tmp/meister-status"):
             os.remove("/tmp/meister-status")
-        if deployer.fileExists("~/.meister"):
-            file = deployer.get("~/.meister", "/tmp/meister-status")[0]
+        if deployer.fileExists(meisterFile):
+            file = deployer.get(meisterFile, "/tmp/meister-status")[0]
         else:
             return { "tasks": [] }
         content = yaml.load(open(file).read())
         return content
 
-    def putTaskStatus(self, status, deployer, logger):
+    def putTaskStatus(self, status, deployer, logger, meisterFile = "~/.meister"):
         file = open("/tmp/meister-status", 'w')
         yaml.dump(status, file)
         file.close()
-        deployer.put("/tmp/meister-status", "~/.meister")
+        deployer.put("/tmp/meister-status", meisterFile)
         os.remove("/tmp/meister-status")
 
     def terminate(self, logger):
