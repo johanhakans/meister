@@ -51,8 +51,12 @@ class YamlConfig(Config):
         # Run tasks
         if self.tasksModule:
             logger.log("Running tasks.")
-
             nodes = self.getNodes().items()
+            # Create a host list that can be used by fabric scripts.
+            hostList = {}
+            for name, node in nodes:
+                hostList[name] = node.externalIp
+
             # Always take the management server first, if it is available.
             # This is necessary since the other nodes could depend on the management server being in place.
             if "managementServer" in self.data:
@@ -66,7 +70,7 @@ class YamlConfig(Config):
             for name, node in nodes:
                 if node.user:
                     logger.log("Running tasks for {0}".format(name))
-                    deployer = Deployer(node.externalIp, username=node.user, keyFile=node.keyFile)
+                    deployer = Deployer(node.externalIp, username=node.user, keyFile=node.keyFile, hostList = hostList)
                     meisterFile = "/home/{0}/.meister".format(node.user)
                     status = self.getTaskStatus(deployer, logger, meisterFile)
                     # Filter out tasks that has already been run.
