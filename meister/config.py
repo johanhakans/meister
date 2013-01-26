@@ -102,6 +102,11 @@ class YamlConfig(Config):
         deployer = Deployer(node.externalIp, username=node.user, keyFile=node.keyFile)
         deployer.runTask(taskFn)
 
+    def ssh(self, logger, nodeName):
+        node = self.getNodes()[nodeName]
+        deployer = Deployer(node.externalIp, username=node.user, keyFile=node.keyFile)
+        deployer.ssh()
+
     def getTaskStatus(self, deployer, logger, meisterFile = "~/.meister"):
         if isfile("/tmp/meister-status"):
             os.remove("/tmp/meister-status")

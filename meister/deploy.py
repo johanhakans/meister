@@ -4,7 +4,7 @@ Created on Jan 11, 2013
 @author: fabsor
 '''
 from time import sleep
-from fabric.api import settings, abort, run, cd, sudo, put, env, prompt, get
+from fabric.api import settings, abort, run, cd, sudo, put, env, prompt, get, open_shell
 from fabric.contrib.files import exists
 
 class Deployer:
@@ -21,6 +21,9 @@ class Deployer:
             self.hoststring = "{0}:{1}".format(self.hoststring, port)
         if username:
             self.hoststring = "{0}@{1}".format(username, self.hoststring)
+
+    def ssh(self):
+        self.runTask(open_shell)
 
     def put(self, localPath, remotePath = None, useSudo = False):
         return self.runTask(put, [localPath, remotePath, useSudo])
