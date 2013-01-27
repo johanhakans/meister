@@ -9,7 +9,7 @@ from fabric.contrib.files import exists
 
 class Deployer:
     
-    def __init__(self, hostname, port = None, username = None, keyFile = None, retries = 2, hostList = {}):
+    def __init__(self, hostname, port = 22, username = None, keyFile = None, retries = 2, hostList = {}):
         self.hostname = hostname
         self.port = port
         self.username = username
@@ -41,7 +41,7 @@ class Deployer:
         return self.runTask(sudo, [command])
 
     def runTask(self, task, args = [], tries = 0):
-        with settings(host_string = self.hostname, user=self.username, key_filename=self.keyFile, host=self.hostname, meister = self.hostList):
+        with settings(host_string = self.hostname, port=self.port, user=self.username, key_filename=self.keyFile, host=self.hostname, meister = self.hostList):
             try:
                 return task(**args) if isinstance(args, dict) else task(*args)
             except Exception as e:
