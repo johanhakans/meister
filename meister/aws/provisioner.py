@@ -14,7 +14,7 @@ class Provisioner:
         self.connection = connection
         self.logger = logger
     
-    def provisionSecurityGroups(self, groups):
+    def provisionSecurityGroups(self, groups, nodes = {}):
         existingGroups = self.connection.getSecurityGroups()
         for name, group in groups.items():
             if not name in existingGroups:
@@ -23,6 +23,15 @@ class Provisioner:
             else:
                 ec2Group = existingGroups[name]
             for rule in group["rules"]:
+                if rule["ip"][0] == "^":
+                    if len(nodes) == 0:
+                        continue
+                    name = rule["ip"][1:].partition(":")
+                    if nodes[name[0]]:
+                        rule["ip"] = nodes[name[0]].externalIp if len(name) < 2 or name[2] != "internal" else nodes[name[0]].internalIp
+                        rule["ip"] += "/32"
+                    else:
+                        continue
                 self.logger.log("Creating rule {0}:{1}-{2}".format(rule["ip"], rule["fromPort"], rule["toPort"]))
                 ec2Group.addRule(rule["fromPort"], rule["toPort"], rule["ip"])
 

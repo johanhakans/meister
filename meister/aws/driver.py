@@ -72,6 +72,7 @@ class EC2Driver:
         provisioner.provisionSecurityGroups(self.getSecurityGroups())
         provisioner.provisionNodes(self.config.getNodes())
         provisioner.verify(self.config.getNodes())
+        provisioner.provisionSecurityGroups(self.getSecurityGroups(), self.config.getNodes())
         provisioner.createElasticIps(self.config.getNodes())
         
     def terminate(self, logger):
