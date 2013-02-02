@@ -100,11 +100,11 @@ class EC2Connection:
         group = EC2SecurityGroup(self.conn, name, description)
         return group
     
-    def getSecurityGroups(self):
+    def getSecurityGroups(self, reset = False):
         """
         Get a list of all security groups.
         """
-        if not self.securityGroups:
+        if not self.securityGroups or reset:
             params = {
                 'Action': 'DescribeSecurityGroups',
             }

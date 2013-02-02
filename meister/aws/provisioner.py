@@ -15,7 +15,7 @@ class Provisioner:
         self.logger = logger
     
     def provisionSecurityGroups(self, groups, nodes = {}):
-        existingGroups = self.connection.getSecurityGroups()
+        existingGroups = self.connection.getSecurityGroups(True)
         for name, group in groups.items():
             if not name in existingGroups:
                 self.logger.log("Creating security group {0}".format(name))
