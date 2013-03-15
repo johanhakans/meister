@@ -9,7 +9,7 @@ setup(name='Meister',
       author_email='fabian.sorqvist@wunderkraut.com',
       url='https://github.com/WKLive/meister',
       packages=find_packages(),
-      install_requires=['fabric>=1.0', "apache-libcloud>=0.10", "pyyaml"],
+      install_requires=['fabric>=1.0', "apache-libcloud==0.11.4", "pyyaml"],
       tests_require=["nose"],
       entry_points={
         'console_scripts': [
