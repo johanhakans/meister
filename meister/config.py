@@ -139,7 +139,7 @@ class YamlConfig(Config):
     def parse(self):
         data = yaml.load(open(self.configFile).read())
         self.driver = self.drivers[data['driver']['name']](self, data)
-        self.DNSDriver = self.DNSDrivers[data['DNS']['name']](self, data)
+        # self.DNSDriver = self.DNSDrivers[data['DNS']['name']](self, data)
         self.nodes = {}
         self.data = data
         self.tasksModule = __import__(data["tasksModule"]) if "tasksModule" in data else None
